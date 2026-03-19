@@ -145,7 +145,9 @@ AgriSense/
 ```
 
 ## 项目渲染
-![alt text](rendering/concept_art.png)![alt text](rendering/ui_mockup.png)
+> 概念图![alt text](rendering/concept_art.png)
+
+> UI原型![alt text](rendering/ui_mockup.png)
 
 ## 运行模式
 
