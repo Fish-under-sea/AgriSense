@@ -1,0 +1,112 @@
+{
+  "sensors": {
+    "environment": {
+      "i2c_address": "0x76",
+      "simulation": {
+        "temperature": {"min": 18, "max": 32, "value": 25},
+        "humidity": {"min": 40, "max": 80, "value": 60},
+        "light": {"min": 500, "max": 5000, "value": 2500},
+        "co2": {"min": 400, "max": 1200, "value": 600},
+        "pressure": {"min": 990, "max": 1030, "value": 1013},
+        "voc": {"min": 0, "max": 500, "value": 200}
+      }
+    },
+    "soil": {
+      "num_points": 3,
+      "simulation": {
+        "points": [
+          {"min": 20, "max": 80, "value": 45},
+          {"min": 20, "max": 80, "value": 50},
+          {"min": 20, "max": 80, "value": 48}
+        ]
+      }
+    }
+  },
+  "vision": {
+    "camera": {
+      "resolution": [640, 480],
+      "fps": 30,
+      "simulation": true
+    },
+    "models": {
+      "leaf_disease": {
+        "enabled": true,
+        "confidence_threshold": 0.7
+      },
+      "growth_measure": {
+        "enabled": true
+      }
+    }
+  },
+  "decision": {
+    "rules_engine": {
+      "enabled": true,
+      "rules": {
+        "temperature": {
+          "min": 18,
+          "max": 32,
+          "actions": {
+            "below_min": "开启补光，关闭通风",
+            "above_max": "开启通风，关闭补光"
+          }
+        },
+        "humidity": {
+          "min": 45,
+          "max": 75,
+          "actions": {
+            "below_min": "减少通风",
+            "above_max": "加强通风"
+          }
+        },
+        "soil_moisture": {
+          "min": 35,
+          "max": 65,
+          "actions": {
+            "below_min": "开启灌溉",
+            "above_max": "关闭灌溉"
+          }
+        }
+      }
+    },
+    "llm_advisor": {
+      "enabled": true,
+      "default_model": "gpt-4o-mini",
+      "models": {
+        "qwen3.5": {
+          "name": "②Qwen 3.5 9B (本地)",
+          "provider": "ollama",
+          "model": "qwen3.5:9b",
+          "base_url": "http://localhost:11434",
+          "api_key": "",
+          "enabled": true
+        },
+        "gpt-4o-mini": {
+          "name": "①Gpt-4o-mini (主力)",
+          "provider": "openai",
+          "model": "gpt-4o-mini",
+          "base_url": "https://free.v36.cm/v1",
+          "api_key": "sk-FI9VrF3YkNwQ53lp4684E7D1E856431eA32d399aC1906fA7",
+          "enabled": true
+        }
+      }
+    }
+  },
+  "actuators": {
+    "irrigation": {
+      "pin": 17,
+      "simulation": true
+    },
+    "light": {
+      "pin": 27,
+      "simulation": true
+    },
+    "fan": {
+      "pin": 22,
+      "simulation": true
+    },
+    "shade": {
+      "pin": 23,
+      "simulation": true
+    }
+  }
+}
