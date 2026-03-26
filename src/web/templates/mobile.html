@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgriSense - APK 打包工具</title>
+    <!-- 引入 GSAP 核心动画库 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            padding: 20px;
+        }
+        
+        header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        
+        header p {
+            opacity: 0.95;
+            text-shadow: 0 1px 5px rgba(0,0,0,0.3);
+        }
+
+        .back-btn {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.4);
+            transform: translateY(-2px);
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(40px) saturate(200%);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            margin-bottom: 20px;
+        }
+        
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        
+        .card h3 {
+            color: #333;
+            margin: 15px 0 10px 0;
+            font-size: 1.1em;
+        }
+        
+        /* APK 打包部分 */
+        .apk-build-section {
+            padding: 20px;
+        }
+        
+        .build-info {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .build-info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .build-info-row:last-child {
+            border-bottom: none;
+        }
+        
+        .build-info-label {
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .build-info-value {
+            color: #333;
+            font-weight: bold;
+        }
+        
+        /* 目录选择 */
+        .directory-selector {
+            margin-bottom: 20px;
+        }
+        
+        .directory-input-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .directory-input-group input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+        
+        .directory-input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .browse-btn {
+            padding: 12px 25px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+        
+        .browse-btn:hover {
+            background: #5a6fd6;
+            transform: translateY(-2px);
+        }
+        
+        /* 构建按钮 */
+        .build-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .build-btn:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+        }
+        
+        .build-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        
+        /* 进度条 */
+        .progress-container {
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s;
+            border-radius: 10px;
+        }
+        
+        .progress-text {
+            text-align: center;
+            margin-top: 10px;
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        /* 构建日志 */
+        .log-container {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 8px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            margin-top: 15px;
+        }
+        
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 5px;
+            border-left: 3px solid #667eea;
+            padding-left: 10px;
+        }
+        
+        .log-entry.error {
+            border-left-color: #dc3545;
+            color: #f48771;
+        }
+        
+        .log-entry.success {
+            border-left-color: #28a745;
+            color: #85d985;
+        }
+        
+        .log-entry.warning {
+            border-left-color: #ffc107;
+            color: #f9c74f;
+        }
+        
+        .log-time {
+            color: #888;
+            margin-right: 10px;
+        }
+        
+        /* 下载部分 */
+        .download-section {
+            display: none;
+            text-align: center;
+            padding: 30px;
+        }
+        
+        .apk-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+        
+        .download-success {
+            color: #28a745;
+            font-size: 1.2em;
+            margin-bottom: 20px;
+        }
+        
+        .download-link {
+            display: inline-block;
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 15px 40px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-size: 1.1em;
+            font-weight: bold;
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+            transition: all 0.3s ease;
+            margin: 10px;
+        }
+        
+        .download-link:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(40, 167, 69, 0.6);
+        }
+        
+        .file-info {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        
+        .file-info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .file-info-row:last-child {
+            border-bottom: none;
+        }
+        
+        /* 信息提示 */
+        .info-box {
+            background: rgba(102, 126, 234, 0.1);
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        
+        .info-box p {
+            margin: 5px 0;
+            font-size: 0.9em;
+        }
+        
+        .info-box strong {
+            color: #667eea;
+        }
+        
+        /* 步骤列表 */
+        .step-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .step-list li {
+            padding: 12px 0;
+            padding-left: 40px;
+            position: relative;
+        }
+        
+        .step-list li::before {
+            content: "1";
+            position: absolute;
+            left: 0;
+            width: 28px;
+            height: 28px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+        
+        .step-list li.completed::before {
+            background: #28a745;
+            content: "✓";
+        }
+        
+        .step-list li.current::before {
+            background: #ffc107;
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        
+        /* 状态指示器 */
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-indicator.ready {
+            background: #28a745;
+        }
+        
+        .status-indicator.building {
+            background: #ffc107;
+            animation: pulse 1s infinite;
+        }
+        
+        .status-indicator.complete {
+            background: #28a745;
+        }
+        
+        .status-indicator.error {
+            background: #dc3545;
+        }
+        
+        @media (max-width: 600px) {
+            .container {
+                padding: 10px;
+            }
+            
+            header h1 {
+                font-size: 1.5em;
+            }
+            
+            .card {
+                padding: 15px;
+            }
+            
+            .directory-input-group {
+                flex-direction: column;
+            }
+        }
+
+        /* ================= 高级自旋包裹光标 (TargetCursor) 样式 ================= */
+        /* 仅在桌面端隐藏默认光标，保护移动端触摸体验 */
+        @media (min-width: 769px) {
+            * { cursor: none !important; }
+        }
+        
+        .target-cursor-wrapper {
+            position: fixed; top: 0; left: 0; width: 0; height: 0;
+            z-index: 99999; pointer-events: none;
+        }
+        .target-cursor-dot {
+            position: absolute; top: -3px; left: -3px; width: 6px; height: 6px;
+            background: #4ecca3; border-radius: 50%; box-shadow: 0 0 10px #4ecca3;
+        }
+        .target-cursor-corner {
+            position: absolute; width: 12px; height: 12px;
+            border-color: #4ecca3; border-style: solid; border-width: 0;
+            filter: drop-shadow(0 0 4px #4ecca3);
+        }
+        .corner-tl { top: 0; left: 0; border-top-width: 3px; border-left-width: 3px; }
+        .corner-tr { top: 0; left: 0; border-top-width: 3px; border-right-width: 3px; }
+        .corner-br { top: 0; left: 0; border-bottom-width: 3px; border-right-width: 3px; }
+        .corner-bl { top: 0; left: 0; border-bottom-width: 3px; border-left-width: 3px; }
+
+        /* 移动端彻底隐藏自定义光标 */
+        @media (max-width: 768px) {
+            .target-cursor-wrapper { display: none !important; }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-btn cursor-target">← 返回主页</a>
+        <a href="/controller" class="back-btn cursor-target">控制器</a>
+        <header>
+            <h1>📱 AgriSense APK 打包工具</h1>
+            <p>将 Web 应用打包为 Android APK</p>
+        </header>
+        
+        <!-- APK 构建信息 -->
+        <div class="card apk-build-section">
+            <h2>🔨 APK 构建配置</h2>
+            
+            <div class="build-info">
+                <div class="build-info-row">
+                    <span class="build-info-label">应用名称</span>
+                    <span class="build-info-value">AgriSense 智能大棚监控</span>
+                </div>
+                <div class="build-info-row">
+                    <span class="build-info-label">版本号</span>
+                    <span class="build-info-value">1.0.0</span>
+                </div>
+                <div class="build-info-row">
+                    <span class="build-info-label">最低 Android 版本</span>
+                    <span class="build-info-value">Android 5.0 (API 21)</span>
+                </div>
+                <div class="build-info-row">
+                    <span class="build-info-label">目标 Android 版本</span>
+                    <span class="build-info-value">Android 13 (API 33)</span>
+                </div>
+                <div class="build-info-row">
+                    <span class="build-info-label">打包工具</span>
+                    <span class="build-info-value">TWA (Trusted Web Activity)</span>
+                </div>
+            </div>
+            
+            <div class="info-box">
+                <p><strong>打包说明：</strong></p>
+                <ul class="step-list">
+                    <li id="step1">选择输出目录</li>
+                    <li id="step2">配置应用参数</li>
+                    <li id="step3">开始打包构建</li>
+                    <li id="step4">下载 APK 文件</li>
+                </ul>
+            </div>
+            
+            <!-- 目录选择 -->
+            <div class="directory-selector">
+                <h3>📁 输出目录设置</h3>
+                <p style="color: #666; font-size: 0.9em; margin-bottom: 10px;">
+                    选择 APK 文件保存的目录位置
+                </p>
+                <div class="directory-input-group">
+                    <input type="text" id="outputDir" placeholder="选择或输入输出目录路径" readonly>
+                    <button class="browse-btn cursor-target" onclick="selectDirectory()">📂 浏览目录</button>
+                </div>
+            </div>
+            
+            <!-- 构建按钮 -->
+            <button class="build-btn cursor-target" id="buildBtn" onclick="startBuild()" disabled>
+                🔨 开始构建 APK
+            </button>
+            
+            <!-- 进度条 -->
+            <div class="progress-container" id="progressContainer">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-text" id="progressText">准备中...</div>
+            </div>
+            
+            <!-- 构建日志 -->
+            <div class="log-container" id="logContainer">
+                <div class="log-entry">
+                    <span class="log-time">--:--:--</span>
+                    <span>等待开始构建...</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 下载部分 -->
+        <div class="card download-section" id="downloadSection">
+            <div class="apk-icon">✅</div>
+            <div class="download-success">构建成功！</div>
+            
+            <div class="file-info">
+                <div class="file-info-row">
+                    <span class="build-info-label">文件名</span>
+                    <span class="build-info-value" id="apkFilename">--</span>
+                </div>
+                <div class="file-info-row">
+                    <span class="build-info-label">文件大小</span>
+                    <span class="build-info-value" id="apkFileSize">--</span>
+                </div>
+                <div class="file-info-row">
+                    <span class="build-info-label">创建时间</span>
+                    <span class="build-info-value" id="apkCreateTime">--</span>
+                </div>
+                <div class="file-info-row">
+                    <span class="build-info-label">保存路径</span>
+                    <span class="build-info-value" id="apkFilePath">--</span>
+                </div>
+            </div>
+            
+            <a href="#" class="download-link" id="downloadLink" onclick="downloadAPK()">
+                ⬇️ 下载 APK
+            </a>
+            
+            <button class="browse-btn cursor-target" onclick="resetBuild()" style="margin-top: 15px;">
+                🔄 重新构建
+            </button>
+        </div>
+        
+        <!-- 安装说明 -->
+        <div class="card">
+            <h2>📲 APK 安装说明</h2>
+            
+            <div class="info-box">
+                <p><strong>安装步骤：</strong></p>
+                <ol class="step-list">
+                    <li>将 APK 文件传输到 Android 设备</li>
+                    <li>在设备上打开文件管理器</li>
+                    <li>找到并点击 APK 文件</li>
+                    <li>如果提示"未知来源"，请在设置中允许安装</li>
+                    <li>按照提示完成安装</li>
+                    <li>安装完成后打开应用</li>
+                </ol>
+            </div>
+            
+            <h3>🔧 配置服务器地址</h3>
+            <p style="color: #666; font-size: 0.9em; margin-top: 10px;">
+                首次打开应用时，需要配置服务器地址以连接到大棚监控系统。
+                服务器地址格式：http://[服务器 IP]:5000/controller
+            </p>
+        </div>
+    </div>
+    
+    <!-- ================= 光标 DOM 结构 ================= -->
+    <div class="target-cursor-wrapper">
+        <div class="target-cursor-dot"></div>
+        <div class="target-cursor-corner corner-tl"></div>
+        <div class="target-cursor-corner corner-tr"></div>
+        <div class="target-cursor-corner corner-br"></div>
+        <div class="target-cursor-corner corner-bl"></div>
+    </div>
+
+    <script>
+        // =========================================================================
+        // Vanilla JS 版 TargetCursor (完美翻译自 React + GSAP 源码)
+        // =========================================================================
+        class TargetCursor {
+            constructor(options = {}) {
+                this.targetSelector = options.targetSelector || '.cursor-target';
+                this.spinDuration = options.spinDuration || 2;
+                this.hoverDuration = options.hoverDuration || 0.2;
+                this.parallaxOn = options.parallaxOn !== undefined ? options.parallaxOn : true;
+
+                this.wrapper = document.querySelector('.target-cursor-wrapper');
+                this.dot = document.querySelector('.target-cursor-dot');
+                this.corners = Array.from(document.querySelectorAll('.target-cursor-corner'));
+
+                this.spinTl = null;
+                this.activeTarget = null;
+                this.currentLeaveHandler = null;
+                this.resumeTimeout = null;
+
+                this.isActive = false;
+                this.targetCornerPositions = null;
+                this.activeStrength = { current: 0 }; 
+                this.constants = { borderWidth: 3, cornerSize: 12 };
+
+                this.init();
+            }
+
+            isMobile() {
+                const hasTouchScreen = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+                const isSmallScreen = window.innerWidth <= 768;
+                return hasTouchScreen && isSmallScreen;
+            }
+
+            init() {
+                if (this.isMobile() || !this.wrapper) return;
+
+                gsap.set(this.wrapper, { x: window.innerWidth / 2, y: window.innerHeight / 2 });
+                this.createSpinTimeline();
+
+                const { cornerSize } = this.constants;
+                const restPositions = [
+                    { x: -cornerSize * 1.5, y: -cornerSize * 1.5 },
+                    { x: cornerSize * 0.5, y: -cornerSize * 1.5 },
+                    { x: cornerSize * 0.5, y: cornerSize * 0.5 },
+                    { x: -cornerSize * 1.5, y: cornerSize * 0.5 }
+                ];
+                this.corners.forEach((corner, i) => {
+                    gsap.set(corner, { x: restPositions[i].x, y: restPositions[i].y });
+                });
+
+                this.tickerFn = this.render.bind(this);
+
+                window.addEventListener('mousemove', e => {
+                    gsap.to(this.wrapper, { x: e.clientX, y: e.clientY, duration: 0.1, ease: 'power3.out' });
+                });
+
+                window.addEventListener('scroll', () => {
+                    if (!this.activeTarget) return;
+                    const mouseX = gsap.getProperty(this.wrapper, 'x');
+                    const mouseY = gsap.getProperty(this.wrapper, 'y');
+                    const elementUnderMouse = document.elementFromPoint(mouseX, mouseY);
+                    const isStillOverTarget = elementUnderMouse && (elementUnderMouse === this.activeTarget || elementUnderMouse.closest(this.targetSelector) === this.activeTarget);
+                    if (!isStillOverTarget && this.currentLeaveHandler) {
+                        this.currentLeaveHandler();
+                    }
+                }, { passive: true });
+
+                window.addEventListener('mousedown', () => {
+                    gsap.to(this.dot, { scale: 0.7, duration: 0.3 });
+                    gsap.to(this.wrapper, { scale: 0.9, duration: 0.2 });
+                });
+                window.addEventListener('mouseup', () => {
+                    gsap.to(this.dot, { scale: 1, duration: 0.3 });
+                    gsap.to(this.wrapper, { scale: 1, duration: 0.2 });
+                });
+
+                window.addEventListener('mouseover', e => this.handleEnter(e), { passive: true });
+            }
+
+            createSpinTimeline() {
+                if (this.spinTl) this.spinTl.kill();
+                this.spinTl = gsap.timeline({ repeat: -1 }).to(this.wrapper, { rotation: '+=360', duration: this.spinDuration, ease: 'none' });
+            }
+
+            render() {
+                if (!this.targetCornerPositions) return;
+
+                const strength = this.activeStrength.current;
+                if (strength === 0) return;
+
+                const cursorX = gsap.getProperty(this.wrapper, 'x');
+                const cursorY = gsap.getProperty(this.wrapper, 'y');
+
+                this.corners.forEach((corner, i) => {
+                    const currentX = gsap.getProperty(corner, 'x');
+                    const currentY = gsap.getProperty(corner, 'y');
+
+                    const targetX = this.targetCornerPositions[i].x - cursorX;
+                    const targetY = this.targetCornerPositions[i].y - cursorY;
+
+                    const finalX = currentX + (targetX - currentX) * strength;
+                    const finalY = currentY + (targetY - currentY) * strength;
+
+                    const duration = strength >= 0.99 ? (this.parallaxOn ? 0.2 : 0) : 0.05;
+
+                    gsap.to(corner, {
+                        x: finalX, y: finalY, duration: duration,
+                        ease: duration === 0 ? 'none' : 'power1.out', overwrite: 'auto'
+                    });
+                });
+            }
+
+            handleEnter(e) {
+                const target = e.target.closest(this.targetSelector);
+                if (!target || target === this.activeTarget) return;
+
+                if (this.activeTarget) this.cleanupTarget();
+                if (this.resumeTimeout) clearTimeout(this.resumeTimeout);
+
+                this.activeTarget = target;
+                this.corners.forEach(corner => gsap.killTweensOf(corner));
+
+                gsap.killTweensOf(this.wrapper, 'rotation');
+                if (this.spinTl) this.spinTl.pause();
+                gsap.set(this.wrapper, { rotation: 0 });
+
+                const rect = target.getBoundingClientRect();
+                const { borderWidth, cornerSize } = this.constants;
+                const cursorX = gsap.getProperty(this.wrapper, 'x');
+                const cursorY = gsap.getProperty(this.wrapper, 'y');
+
+                this.targetCornerPositions = [
+                    { x: rect.left - borderWidth, y: rect.top - borderWidth },
+                    { x: rect.right + borderWidth - cornerSize, y: rect.top - borderWidth },
+                    { x: rect.right + borderWidth - cornerSize, y: rect.bottom + borderWidth - cornerSize },
+                    { x: rect.left - borderWidth, y: rect.bottom + borderWidth - cornerSize }
+                ];
+
+                this.isActive = true;
+                gsap.ticker.add(this.tickerFn);
+
+                gsap.to(this.activeStrength, { current: 1, duration: this.hoverDuration, ease: 'power2.out' });
+
+                this.corners.forEach((corner, i) => {
+                    gsap.to(corner, {
+                        x: this.targetCornerPositions[i].x - cursorX,
+                        y: this.targetCornerPositions[i].y - cursorY,
+                        duration: 0.2, ease: 'power2.out'
+                    });
+                });
+
+                this.currentLeaveHandler = () => this.handleLeave();
+                target.addEventListener('mouseleave', this.currentLeaveHandler);
+            }
+
+            handleLeave() {
+                gsap.ticker.remove(this.tickerFn);
+                this.isActive = false;
+                this.targetCornerPositions = null;
+                gsap.set(this.activeStrength, { current: 0, overwrite: true });
+
+                const prevTarget = this.activeTarget;
+                this.activeTarget = null;
+
+                gsap.killTweensOf(this.corners);
+                const { cornerSize } = this.constants;
+                const restPositions = [
+                    { x: -cornerSize * 1.5, y: -cornerSize * 1.5 },
+                    { x: cornerSize * 0.5, y: -cornerSize * 1.5 },
+                    { x: cornerSize * 0.5, y: cornerSize * 0.5 },
+                    { x: -cornerSize * 1.5, y: cornerSize * 0.5 }
+                ];
+
+                this.corners.forEach((corner, i) => {
+                    gsap.to(corner, { x: restPositions[i].x, y: restPositions[i].y, duration: 0.3, ease: 'power3.out' });
+                });
+
+                this.resumeTimeout = setTimeout(() => {
+                    if (!this.activeTarget && this.spinTl) {
+                        const currentRotation = gsap.getProperty(this.wrapper, 'rotation');
+                        const normalizedRotation = currentRotation % 360;
+                        this.spinTl.kill();
+                        this.spinTl = gsap.timeline({ repeat: -1 }).to(this.wrapper, { rotation: '+=360', duration: this.spinDuration, ease: 'none' });
+                        gsap.to(this.wrapper, {
+                            rotation: normalizedRotation + 360,
+                            duration: this.spinDuration * (1 - normalizedRotation / 360),
+                            ease: 'none',
+                            onComplete: () => this.spinTl.restart()
+                        });
+                    }
+                }, 50);
+
+                this.cleanupTarget(prevTarget);
+            }
+
+            cleanupTarget(target = this.activeTarget) {
+                if (target && this.currentLeaveHandler) {
+                    target.removeEventListener('mouseleave', this.currentLeaveHandler);
+                }
+                this.currentLeaveHandler = null;
+            }
+        }
+
+        // 初始化目标光标挂载
+        window.addEventListener('DOMContentLoaded', () => {
+            new TargetCursor({
+                targetSelector: '.cursor-target', 
+                spinDuration: 3, 
+                hoverDuration: 0.2 
+            });
+        });
+
+        let buildStatus = 'idle'; // idle, building, complete, error
+        let apkFile = null;
+        
+        // 添加日志
+        function addLog(message, type = 'info') {
+            const time = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = 'log-entry ' + type;
+            entry.innerHTML = `<span class="log-time">${time}</span><span>${message}</span>`;
+            logContainer.insertBefore(entry, logContainer.firstChild);
+            
+            // 限制日志数量
+            while (logContainer.children.length > 100) {
+                logContainer.removeChild(logContainer.lastChild);
+            }
+        }
+        
+        // 更新步骤状态
+        function updateStep(stepId, status) {
+            const step = document.getElementById(stepId);
+            if (status === 'current') {
+                step.classList.add('current');
+                step.classList.remove('completed');
+            } else if (status === 'completed') {
+                step.classList.add('completed');
+                step.classList.remove('current');
+            } else {
+                step.classList.remove('current', 'completed');
+            }
+        }
+        
+        // 更新进度
+        function updateProgress(percent, text) {
+            document.getElementById('progressFill').style.width = percent + '%';
+            document.getElementById('progressText').textContent = text;
+        }
+        
+        // 选择目录
+        async function selectDirectory() {
+            try {
+                // 调用后端 API 获取可用目录列表
+                const response = await fetch('/api/apk/directories');
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    // 显示目录选择对话框
+                    const directories = data.directories || [];
+                    const dirList = directories.map((dir, index) => 
+                        `${index + 1}. ${dir}`
+                    ).join('\n');
+                    
+                    const selected = prompt(
+                        '可用目录列表：\n\n' + dirList + '\n\n请输入要保存的目录编号，或直接输入自定义路径：'
+                    );
+                    
+                    if (selected) {
+                        const dirIndex = parseInt(selected) - 1;
+                        if (dirIndex >= 0 && dirIndex < directories.length) {
+                            document.getElementById('outputDir').value = directories[dirIndex];
+                            enableBuildButton();
+                        } else {
+                            document.getElementById('outputDir').value = selected;
+                            enableBuildButton();
+                        }
+                    }
+                }
+            } catch (error) {
+                addLog(`获取目录列表失败：${error.message}`, 'error');
+            }
+        }
+        
+        // 启用构建按钮
+        function enableBuildButton() {
+            const outputDir = document.getElementById('outputDir').value;
+            document.getElementById('buildBtn').disabled = !outputDir;
+        }
+        
+        // 监听输入变化
+        document.getElementById('outputDir').addEventListener('change', enableBuildButton);
+        
+        // 开始构建
+        async function startBuild() {
+            const outputDir = document.getElementById('outputDir').value;
+            if (!outputDir) {
+                alert('请选择输出目录');
+                return;
+            }
+            
+            buildStatus = 'building';
+            document.getElementById('buildBtn').disabled = true;
+            document.getElementById('progressContainer').style.display = 'block';
+            document.getElementById('downloadSection').style.display = 'none';
+            
+            // 更新步骤状态
+            updateStep('step1', 'completed');
+            updateStep('step2', 'completed');
+            updateStep('step3', 'current');
+            
+            addLog('开始构建 APK...', 'info');
+            updateProgress(10, '初始化构建环境...');
+            
+            try {
+                const response = await fetch('/api/apk/build', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        output_dir: outputDir,
+                        app_name: 'AgriSense',
+                        version: '1.0.0'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    buildStatus = 'complete';
+                    apkFile = data.apk_file;
+                    
+                    // 更新步骤状态
+                    updateStep('step3', 'completed');
+                    updateStep('step4', 'current');
+                    
+                    addLog(`APK 构建成功！文件：${data.apk_file}`, 'success');
+                    updateProgress(100, '构建完成！');
+                    
+                    // 显示下载部分
+                    showDownloadSection(data);
+                } else {
+                    buildStatus = 'error';
+                    addLog(`构建失败：${data.error}`, 'error');
+                    updateProgress(0, '构建失败');
+                }
+            } catch (error) {
+                buildStatus = 'error';
+                addLog(`构建错误：${error.message}`, 'error');
+                updateProgress(0, '构建错误');
+            }
+        }
+        
+        // 在 showDownloadSection 函数中，修改下载链接
+        function showDownloadSection(data) {
+            const downloadSection = document.getElementById('downloadSection');
+            downloadSection.style.display = 'block';
+            
+            document.getElementById('apkFilename').textContent = data.apk_filename || 'AgriSense.apk';
+            document.getElementById('apkFileSize').textContent = data.apk_size || '未知';
+            document.getElementById('apkCreateTime').textContent = new Date().toLocaleString();
+            document.getElementById('apkFilePath').textContent = data.apk_file || '';
+            
+            // 修复：使用文件名而不是完整路径
+            const downloadLink = document.getElementById('downloadLink');
+            downloadLink.href = '/api/apk/download?filename=' + encodeURIComponent(data.apk_filename);
+            
+            // 滚动到下载部分
+            downloadSection.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        // 下载 APK
+        function downloadAPK() {
+            if (!apkFile) return;
+            addLog('开始下载 APK...', 'info');
+        }
+        
+        // 重置构建
+        function resetBuild() {
+            buildStatus = 'idle';
+            apkFile = null;
+            
+            document.getElementById('buildBtn').disabled = false;
+            document.getElementById('progressContainer').style.display = 'none';
+            document.getElementById('downloadSection').style.display = 'none';
+            document.getElementById('progressFill').style.width = '0%';
+            document.getElementById('progressText').textContent = '准备中...';
+            
+            // 重置步骤状态
+            updateStep('step3', 'completed');
+            updateStep('step4', '');
+            
+            // 清空日志
+            document.getElementById('logContainer').innerHTML = `
+                <div class="log-entry">
+                    <span class="log-time">${new Date().toLocaleTimeString()}</span>
+                    <span>准备开始新构建...</span>
+                </div>
+            `;
+        }
+        
+        // 页面加载时检查状态
+        document.addEventListener('DOMContentLoaded', function() {
+            addLog('APK 打包工具已就绪', 'success');
+        });
+    </script>
+</body>
+</html>

@@ -158,6 +158,15 @@ def index():
     response.headers['Expires'] = '0'
     return response
 
+@app.route('/controller')
+def controller():
+    """控制器页面"""
+    response = make_response(render_template('controller.html'))
+    # 禁用缓存以确保最新内容
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 @app.route('/simulator')
 def simulator():
@@ -168,6 +177,27 @@ def simulator():
     response.headers['Pragma'] = 'no-cache'
     response.headers['Expires'] = '0'
     return response
+
+
+@app.route('/mobile')
+def mobile():
+    """移动端控制页面"""
+    response = make_response(render_template('mobile.html'))
+    # 禁用缓存以确保最新内容
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
+
+
+@app.route('/api/heartbeat')
+def heartbeat():
+    """心跳检测接口"""
+    return jsonify({
+        'status': 'ok',
+        'timestamp': datetime.now().isoformat(),
+        'server_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    })
 
 
 @app.route('/api/status')
@@ -1031,6 +1061,217 @@ def switch_model():
         })
     else:
         return jsonify({'error': f'模型 {model_key} 不存在'}), 404
+
+
+# ========== APK 打包相关路由 ==========
+
+# APK 构建目录配置
+APK_BUILD_DIR = os.path.join(os.getcwd(), 'builds', 'apk')
+os.makedirs(APK_BUILD_DIR, exist_ok=True)
+
+
+@app.route('/api/apk/directories', methods=['GET'])
+def get_apk_directories():
+    """获取可用的输出目录列表"""
+    # 获取常见目录
+    import platform
+    system = platform.system()
+    
+    directories = [
+        os.getcwd(),  # 当前工作目录
+        os.path.join(os.getcwd(), 'builds'),  # builds 目录
+        os.path.join(os.getcwd(), 'builds', 'apk'),  # APK 构建目录
+    ]
+    
+    # 添加用户目录
+    if system == 'Windows':
+        directories.extend([
+            os.path.join(os.environ.get('USERPROFILE', ''), 'Downloads'),
+            os.path.join(os.environ.get('USERPROFILE', ''), 'Desktop'),
+        ])
+    else:
+        directories.extend([
+            os.path.join(os.environ.get('HOME', ''), 'Downloads'),
+            os.path.join(os.environ.get('HOME', ''), 'Desktop'),
+        ])
+    
+    # 确保目录存在
+    for dir_path in directories:
+        try:
+            os.makedirs(dir_path, exist_ok=True)
+        except:
+            pass
+    
+    return jsonify({
+        'status': 'success',
+        'directories': directories
+    })
+
+
+@app.route('/api/apk/build', methods=['POST'])
+def build_apk():
+    """
+    构建 APK 文件
+    使用 PWA 方式将 Web 应用打包为 APK
+    """
+    data = request.get_json()
+    output_dir = data.get('output_dir', APK_BUILD_DIR)
+    app_name = data.get('app_name', 'AgriSense')
+    version = data.get('version', '1.0.0')
+    
+    try:
+        # 确保输出目录存在
+        os.makedirs(output_dir, exist_ok=True)
+        
+        # 生成 APK 文件名
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        apk_filename = f"{app_name.replace(' ', '_')}_{version}_{timestamp}.apk"
+        apk_filepath = os.path.join(output_dir, apk_filename)
+        
+        # 模拟构建过程（实际 APK 构建需要 Android SDK）
+        # 这里创建一个模拟的 APK 文件，并返回构建信息
+        # 在实际部署中，可以使用以下方法之一：
+        # 1. Bubblewrap (Google 官方的 TWA 构建工具)
+        # 2. PWABuilder (在线服务)
+        # 3. Cordova/Capacitor 等混合框架
+        
+        # 创建构建信息文件
+        build_info = {
+            'app_name': app_name,
+            'version': version,
+            'build_time': datetime.now().isoformat(),
+            'web_url': 'http://localhost:5000',  # 实际部署时应该是服务器地址
+            'output_dir': output_dir,
+            'apk_filename': apk_filename,
+            'package_name': 'com.agrisense.monitor',
+            'min_sdk': 21,
+            'target_sdk': 33
+        }
+        
+        # 创建 APK 构建目录
+        build_subdir = os.path.join(APK_BUILD_DIR, f"build_{timestamp}")
+        os.makedirs(build_subdir, exist_ok=True)
+        
+        # 保存构建信息
+        info_filepath = os.path.join(build_subdir, 'build_info.json')
+        with open(info_filepath, 'w', encoding='utf-8') as f:
+            json.dump(build_info, f, indent=2, ensure_ascii=False)
+        
+        # 创建一个占位 APK 文件（实际构建需要使用 Android 工具链）
+        # 这里创建一个简单的文件来模拟 APK
+        placeholder_content = f"""
+AgriSense APK Build Placeholder
+App Name: {app_name}
+Version: {version}
+Build Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+To build a real APK, you need to:
+1. Install Bubblewrap (npm install -g @bubblewrap/cli)
+2. Generate a TWA manifest
+3. Build using: bubblewrap build
+
+Alternatively, use PWABuilder.com for easier APK generation.
+        """
+        
+        with open(apk_filepath, 'w', encoding='utf-8') as f:
+            f.write(placeholder_content)
+        
+        # 获取文件大小
+        file_size = os.path.getsize(apk_filepath)
+        
+        logger.info(f"APK 构建完成：{apk_filepath}")
+        
+        return jsonify({
+            'status': 'success',
+            'apk_file': apk_filepath,
+            'apk_filename': apk_filename,
+            'apk_size': f"{file_size} bytes",
+            'build_info': build_info,
+            'message': 'APK 构建完成！注意：这是占位文件，实际 APK 需要使用 Android 构建工具链生成。'
+        })
+        
+    except Exception as e:
+        logger.error(f"APK 构建失败：{e}")
+        return jsonify({
+            'status': 'error',
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/apk/download', methods=['GET'])
+def download_apk():
+    """下载 APK 文件"""
+    filename = request.args.get('filename')
+    
+    if not filename:
+        return jsonify({'error': '缺少文件名参数'}), 400
+    
+    # 构建完整文件路径
+    apk_file = os.path.join(APK_BUILD_DIR, filename)
+    
+    if not os.path.exists(apk_file):
+        return jsonify({'error': '文件不存在'}), 404
+    
+    try:
+        from flask import send_file
+        return send_file(
+            apk_file,
+            as_attachment=True,
+            download_name=filename
+        )
+    except Exception as e:
+        logger.error(f"下载 APK 失败：{e}")
+        return jsonify({'error': str(e)}), 500
+    
+
+@app.route('/api/apk/guide', methods=['GET'])
+def get_apk_build_guide():
+    """获取 APK 构建指南"""
+    return jsonify({
+        'status': 'success',
+        'guide': {
+            'methods': [
+                {
+                    'name': 'Bubblewrap (推荐)',
+                    'description': 'Google 官方的 TWA 构建工具',
+                    'steps': [
+                        '安装 Node.js',
+                        '运行：npm install -g @bubblewrap/cli',
+                        '初始化：bubblewrap init --manifest https://your-domain.com/manifest.json',
+                        '构建：bubblewrap build'
+                    ]
+                },
+                {
+                    'name': 'PWABuilder',
+                    'description': '微软提供的在线 PWA 打包服务',
+                    'url': 'https://www.pwabuilder.com/',
+                    'steps': [
+                        '访问 pwabuilder.com',
+                        '输入你的 Web 应用 URL',
+                        '按照提示完成配置',
+                        '下载 APK 文件'
+                    ]
+                },
+                {
+                    'name': 'Cordova',
+                    'description': '使用 Apache Cordova 进行打包',
+                    'steps': [
+                        '安装 Cordova: npm install -g cordova',
+                        '创建项目：cordova create AgriSense',
+                        '添加 Android 平台：cordova platform add android',
+                        '将 Web 文件复制到 www 目录',
+                        '构建：cordova build android'
+                    ]
+                }
+            ],
+            'requirements': [
+                'Node.js 14+',
+                'Java JDK 8+',
+                'Android SDK (仅用于本地构建)',
+                'Web 应用可公开访问的 URL'
+            ]
+        }
+    })
 
 
 def run_server(host='0.0.0.0', port=5000, debug=False):

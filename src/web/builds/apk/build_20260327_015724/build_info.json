@@ -1,0 +1,11 @@
+{
+  "app_name": "AgriSense",
+  "version": "1.0.0",
+  "build_time": "2026-03-27T01:57:24.509621",
+  "web_url": "http://localhost:5000",
+  "output_dir": "D:\\Fish-code\\AgriSense\\src\\web\\builds\\apk",
+  "apk_filename": "AgriSense_1.0.0_20260327_015724.apk",
+  "package_name": "com.agrisense.monitor",
+  "min_sdk": 21,
+  "target_sdk": 33
+}

@@ -109,4 +109,4 @@ MIT License
 
 ---
 
-📖 **详细文档**: 查看 [AgriSense_Requirements.md](AgriSense_Requirements.md) 了解系统架构、功能模块详解和开发计划。
+📖 **详细文档**: <br>查看 [AgriSense_Requirements.md](AgriSense_Requirements.md) 了解系统架构、功能模块详解和开发计划。<br>查看 [App_Requirements.md](App_Requirements.md) 了解移动端系统架构、功能模块详解。

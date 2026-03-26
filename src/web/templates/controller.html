@@ -1,0 +1,2193 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgriSense - 智能大棚监控系统</title>
+    <!-- 引入 GSAP 核心动画库 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            padding: 20px;
+            padding-top: 100px;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        /* 视频背景 */
+        .video-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+            overflow: hidden;
+        }
+        
+        .video-background video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        /* 深色遮罩层 */
+        .dark-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: rgba(0, 0, 0, 0.3);
+        }
+        
+        /* 左上角刷新按钮 - 固定在视口左上角 */
+        .top-left-refresh {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            pointer-events: auto;
+        }
+        
+        /* 右上角毛玻璃控制 - 固定在视口右上角 */
+        .top-right-glass {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            pointer-events: auto;
+        }
+        
+        /* 模拟器卡片内的控制区域 */
+        .simulator-controls {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        .simulator-controls h4 {
+            color: #666;
+            font-size: 0.9em;
+            margin: 0;
+        }
+        
+        /* 毛玻璃控制切换器 */
+        .glass-control-panel {
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(30px) saturate(180%);
+            -webkit-backdrop-filter: blur(30px) saturate(180%);
+            border-radius: 15px;
+            padding: 10px 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .glass-control-panel h3 {
+            color: white;
+            font-size: 0.85em;
+            margin: 0;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+        }
+        
+        .glass-toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .glass-toggle-label {
+            color: white;
+            font-size: 0.85em;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+        }
+        
+        .glass-status {
+            color: #4ecca3;
+            font-weight: bold;
+            font-size: 0.8em;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+        }
+        
+        .glass-status.disabled {
+            color: #e74c3c;
+        }
+        
+        /* 模拟控制切换器 */
+        .simulation-control-panel {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 15px;
+            padding: 10px 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .simulation-control-panel h3 {
+            color: white;
+            font-size: 0.85em;
+            margin: 0;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+        }
+        
+        .simulation-toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .simulation-toggle-label {
+            color: white;
+            font-size: 0.85em;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+        }
+        
+        .simulation-status {
+            color: #4ecca3;
+            font-weight: bold;
+            font-size: 0.8em;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+        }
+        
+        .simulation-status.disabled {
+            color: #e74c3c;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        
+        header p {
+            opacity: 0.95;
+            text-shadow: 0 1px 5px rgba(0,0,0,0.3);
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.35);
+            backdrop-filter: blur(40px) saturate(200%);
+            -webkit-backdrop-filter: blur(40px) saturate(200%);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            transition: all 0.3s ease;
+        }
+        
+        .card:hover {
+            background: rgba(255, 255, 255, 0.45);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+            transform: translateY(-5px);
+        }
+        
+        /* 粉末粒子容器 */
+        .particle-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1500;
+        }
+        
+        /* 粉末粒子 */
+        .particle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            pointer-events: none;
+            transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        
+        /* 爆炸动画 */
+        @keyframes explode {
+            0% {
+                transform: translate(0, 0) rotate(0deg) scale(1);
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.8;
+            }
+            100% {
+                transform: translate(var(--tx), var(--ty)) rotate(var(--rotate)) scale(0.3);
+                opacity: 0;
+            }
+        }
+        
+        @keyframes restore {
+            0% {
+                transform: translate(var(--tx), var(--ty)) rotate(var(--rotate)) scale(0.3);
+                opacity: 0;
+            }
+            50% {
+                opacity: 0.5;
+            }
+            100% {
+                transform: translate(0, 0) rotate(0deg) scale(1);
+                opacity: 1;
+            }
+        }
+        
+        .card.exploding {
+            animation: explode 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+        
+        .card.restoring {
+            animation: restore 0.6s cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards;
+        }
+        
+        /* 爆炸按钮 */
+        .explode-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            cursor: pointer;
+            z-index: 2000;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.5);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+        }
+        
+        .explode-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 30px rgba(102, 126, 234, 0.7);
+        }
+        
+        .explode-btn.active {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+        }
+        
+        .explode-btn.active:hover {
+            box-shadow: 0 6px 30px rgba(231, 76, 60, 0.7);
+        }
+        
+        .card h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        
+        .sensor-value {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .sensor-label {
+            color: #666;
+            font-size: 0.95em;
+        }
+        
+        .sensor-data {
+            font-weight: bold;
+            color: #333;
+            font-size: 1.2em;
+        }
+        
+        .sensor-data.good { color: #28a745; }
+        .sensor-data.warning { color: #ffc107; }
+        .sensor-data.danger { color: #dc3545; }
+        
+        .control-btn {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 10px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .control-btn.off {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .control-btn.on {
+            background: #28a745;
+            color: white;
+        }
+        
+        .control-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .alert {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        
+        .alert.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border-left: 4px solid #17a2b8;
+        }
+        
+        .alert.warning {
+            background: #fff3cd;
+            color: #856404;
+            border-left: 4px solid #ffc107;
+        }
+        
+        .alert.danger {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+        
+        .recommendation {
+            padding: 10px;
+            background: #e7f3ff;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            border-left: 4px solid #2196F3;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-indicator.online {
+            background: #28a745;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-indicator.offline {
+            background: #dc3545;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .refresh-btn {
+            background: rgba(102, 126, 234, 0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .refresh-btn:hover {
+            background: rgba(102, 126, 234, 0.95);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+        }
+        
+        .last-update {
+            color: white;
+            font-size: 0.85em;
+            margin-left: 10px;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+        }
+        
+        .full-width {
+            grid-column: 1 / -1;
+        }
+        
+        .image-preview {
+            width: 100%;
+            height: 200px;
+            background: #f0f0f0;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            margin-bottom: 10px;
+        }
+        
+        .health-score {
+            font-size: 3em;
+            font-weight: bold;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .health-score.good { color: #28a745; }
+        .health-score.warning { color: #ffc107; }
+        .health-score.danger { color: #dc3545; }
+        
+        /* AI Chat Styles */
+        .ai-chat-card {
+            grid-column: 1 / -1;
+        }
+        
+        .chat-container {
+            height: 400px;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            background: #f8f9fa;
+        }
+        
+        .chat-message {
+            margin-bottom: 15px;
+            padding: 12px 15px;
+            border-radius: 15px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+        
+        .chat-message.user {
+            background: #667eea;
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 5px;
+        }
+        
+        .chat-message.assistant {
+            background: white;
+            color: #333;
+            border: 1px solid #e0e0e0;
+            border-bottom-left-radius: 5px;
+        }
+        
+        .chat-message .message-role {
+            font-size: 0.75em;
+            opacity: 0.7;
+            margin-bottom: 5px;
+        }
+        
+        .chat-input-area {
+            display: flex;
+            padding: 15px;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+            gap: 10px;
+        }
+        
+        .chat-input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            font-size: 1em;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        
+        .chat-input:focus {
+            border-color: #667eea;
+        }
+        
+        .chat-send-btn {
+            padding: 12px 25px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background 0.3s;
+        }
+        
+        .chat-send-btn:hover {
+            background: #5a6fd6;
+        }
+        
+        .chat-send-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .ai-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 15px;
+            background: rgba(231, 243, 255, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .ai-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2em;
+        }
+        
+        .ai-status {
+            font-size: 0.85em;
+            color: #666;
+        }
+        
+        .ai-status.online {
+            color: #28a745;
+        }
+        
+        .clear-history-btn {
+            padding: 8px 15px;
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.85em;
+            color: #666;
+            transition: all 0.3s;
+        }
+        
+        .clear-history-btn:hover {
+            background: rgba(233, 236, 239, 0.9);
+            color: #dc3545;
+            border-color: #dc3545;
+        }
+        
+        .typing-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 10px 15px;
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .typing-indicator span {
+            width: 8px;
+            height: 8px;
+            background: #667eea;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+        
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+        
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+        
+        /* Toggle Switch Styles */
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 26px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(200, 200, 200, 0.8);
+            transition: 0.4s;
+            border-radius: 26px;
+        }
+        
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .toggle-slider {
+            background-color: rgba(78, 204, 163, 0.9);
+        }
+        
+        input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+        }
+        
+        /* ================= 开屏动画特效 (无抖动+纯白发光修复版) ================= */
+        #splash-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 9999; display: flex; justify-content: center; align-items: center;
+            background: #050505; pointer-events: all;
+        }
+
+        .splash-panel {
+            position: absolute; width: 100%; height: 50vh;
+            background: #050505; transition: transform 0.9s cubic-bezier(0.77, 0, 0.175, 1);
+        }
+        .splash-top { top: 0; }
+        .splash-bottom { bottom: 0; }
+
+        .water-drop {
+            position: absolute; top: 20%; left: 50%; width: 12px; height: 12px; border-radius: 50%;
+            background: #ffffff; box-shadow: 0 0 15px 5px rgba(255,255,255,0.6);
+            transform: translate(-50%, -50%) scale(0); opacity: 0;
+            animation: dropFall 0.7s ease-in forwards;
+        }
+        @keyframes dropFall {
+            0% { top: 20%; transform: translate(-50%, -50%) scale(0); opacity: 1; }
+            100% { top: 50%; transform: translate(-50%, -50%) scale(1); opacity: 0; }
+        }
+
+        .ripple {
+            position: absolute; top: 50%; left: 50%; width: 30px; height: 30px; border-radius: 50%;
+            border: 2px solid rgba(78, 204, 163, 0.8);
+            transform: translate(-50%, -50%) scale(0); opacity: 0;
+        }
+        .ripple-1 { animation: rippleExpand 1.2s ease-out 0.7s forwards; }
+        .ripple-2 { animation: rippleExpand 1.2s ease-out 0.9s forwards; border-color: rgba(255,255,255,0.4); }
+
+        @keyframes rippleExpand {
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(6); opacity: 0; }
+        }
+
+        .splash-content { position: relative; z-index: 10000; width: 100%; max-width: 600px; }
+        .splash-svg { width: 100%; height: 150px; overflow: visible; }
+        
+        .plant-group { transform-origin: 300px 110px; }
+        .plant-stem {
+            fill: transparent; stroke: #4ecca3; stroke-width: 4px; stroke-linecap: round;
+            filter: drop-shadow(0 0 6px rgba(78,204,163,0.8));
+            stroke-dasharray: 100; stroke-dashoffset: 100; opacity: 0;
+            animation: stemGrow 0.6s ease-out 1.2s forwards, plantDissolve 0.5s ease-in 2.6s forwards;
+        }
+        .plant-leaf {
+            fill: rgba(78, 204, 163, 0.2); stroke: #4ecca3; stroke-width: 3px; stroke-linejoin: round;
+            transform-origin: 300px 65px; transform: scale(0); opacity: 0;
+            animation: leafPop 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) 1.6s forwards, plantDissolve 0.5s ease-in 2.6s forwards;
+        }
+
+        @keyframes stemGrow {
+            0% { opacity: 0; stroke-dashoffset: 100; }
+            1% { opacity: 1; } 
+            100% { opacity: 1; stroke-dashoffset: 0; }
+        }
+        @keyframes leafPop {
+            0% { opacity: 0; transform: scale(0) rotate(-15deg); }
+            1% { opacity: 1; }
+            100% { opacity: 1; transform: scale(1) rotate(0deg); }
+        }
+        @keyframes plantDissolve {
+            0% { opacity: 1; filter: blur(0); transform: scale(1); }
+            100% { opacity: 0; filter: blur(10px); transform: scale(1.3) translateY(-15px); }
+        }
+
+        .splash-text {
+            font-size: 85px; font-weight: 800; letter-spacing: 2px;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            fill: transparent; stroke: #4ecca3; stroke-width: 2.5px;
+            stroke-dasharray: 600; stroke-dashoffset: 600; opacity: 0;
+            /* 移除了 jitter，仅保留平滑的线条绘制 */
+            animation: textDraw 1.8s ease-in-out 2.7s forwards;
+            /* 增加过渡属性，让瞬间填白的过程顺滑不生硬 */
+            transition: fill 0.2s ease, filter 0.2s ease, stroke 0.2s ease;
+        }
+
+        @keyframes textDraw {
+            0% { opacity: 0; stroke-dashoffset: 600; }
+            1% { opacity: 1; } 
+            100% { opacity: 1; stroke-dashoffset: 0; }
+        }
+
+        /* 强制填白修复：使用 filter: drop-shadow 解决 SVG 发光失效问题 */
+        .splash-text.fill {
+            opacity: 1 !important; 
+            fill: #ffffff !important; 
+            stroke: transparent !important; 
+            animation: none !important;
+            /* 单层高光 */
+            filter: drop-shadow(0 0 25px rgba(255, 255, 255, 0.8)) !important;
+        }
+
+        body.ready #splash-screen { pointer-events: none; }
+        body.ready .splash-top { transform: translateY(-100%); }
+        body.ready .splash-bottom { transform: translateY(100%); }
+        body.ready .splash-content { opacity: 0; transform: scale(1.05); transition: all 0.5s ease; }
+
+        /* ================= 高级自旋包裹光标 (TargetCursor) 样式 ================= */
+        /* 仅在桌面端隐藏默认光标，保护移动端触摸体验 */
+        @media (min-width: 769px) {
+            * { cursor: none !important; }
+        }
+        
+        .target-cursor-wrapper {
+            position: fixed; top: 0; left: 0; width: 0; height: 0;
+            z-index: 99999; pointer-events: none;
+        }
+        .target-cursor-dot {
+            position: absolute; top: -3px; left: -3px; width: 6px; height: 6px;
+            background: #4ecca3; border-radius: 50%; box-shadow: 0 0 10px #4ecca3;
+        }
+        .target-cursor-corner {
+            position: absolute; width: 12px; height: 12px;
+            border-color: #4ecca3; border-style: solid; border-width: 0;
+            filter: drop-shadow(0 0 4px #4ecca3);
+        }
+        .corner-tl { top: 0; left: 0; border-top-width: 3px; border-left-width: 3px; }
+        .corner-tr { top: 0; left: 0; border-top-width: 3px; border-right-width: 3px; }
+        .corner-br { top: 0; left: 0; border-bottom-width: 3px; border-right-width: 3px; }
+        .corner-bl { top: 0; left: 0; border-bottom-width: 3px; border-left-width: 3px; }
+
+        /* 移动端彻底隐藏自定义光标 */
+        @media (max-width: 768px) {
+            .target-cursor-wrapper { display: none !important; }
+        }
+
+    </style>
+</head>
+<body>
+    <!-- ================= 开屏动画容器 ================= -->
+    <div id="splash-screen"><div class="splash-panel splash-top"></div>
+        <div class="splash-panel splash-bottom"></div>
+        
+        <div class="water-drop"></div>
+        <div class="ripple ripple-1"></div>
+        <div class="ripple ripple-2"></div>
+        
+        <div class="splash-content">
+            <svg viewBox="0 0 600 150" class="splash-svg"><g class="plant-group"><path class="plant-stem" d="M300,110 Q305,80 300,65" />
+                    <path class="plant-leaf leaf-left" d="M300,65 C275,75 265,40 285,35 C295,32 302,50 300,65" />
+                    <path class="plant-leaf leaf-right" d="M300,65 C325,75 335,40 315,35 C305,32 298,50 300,65" />
+                </g>
+                <text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" class="splash-text">
+                    AgriSense
+                </text>
+            </svg>
+        </div>
+    </div>
+
+    <!-- 视频背景 -->
+    <div class="video-background">
+        <video autoplay muted loop playsinline>
+            <!-- <source src="/static/Mario.mp4" type="video/mp4"> -->
+            <source src="/static/archive.mp4" type="video/mp4">
+            您的浏览器不支持视频播放。
+        </video>
+    </div>
+    
+    <!-- 深色遮罩层 -->
+    <div class="dark-overlay"></div>
+    
+    <!-- 左上角：刷新按钮 -->
+    <div class="top-left-refresh">
+        <button class="refresh-btn cursor-target" onclick="refreshAll()">🔄 刷新数据</button>
+        <span class="last-update">上次更新：<span id="lastUpdate">--</span></span>
+    </div>
+    
+    <!-- 右上角：毛玻璃控制 -->
+    <div class="top-right-glass">
+        <!-- 毛玻璃效果控制 -->
+        <div class="glass-control-panel">
+            <h3>🔮 毛玻璃</h3>
+            <div class="glass-toggle-container">
+                <span class="glass-toggle-label">效果</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="glassToggle" checked onchange="toggleGlassEffect()">
+                    <span class="toggle-slider"></span>
+                </label>
+                <span id="glassStatus" class="glass-status">开启</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 爆炸按钮 -->
+    <button class="explode-btn cursor-target" id="explodeBtn" onclick="toggleExplode()" title="点击炸开/恢复组件">💥</button>
+    
+    <div class="container">
+        <header>
+            <h1>🌱 AgriSense 智能大棚监控系统</h1>
+            <p>基于 AI 的农业环境监控与智能决策系统</p>
+        </header>
+        
+        <div class="dashboard">
+            <!-- 环境数据卡片 -->
+            <div class="card">
+                <h2>🌡️ 环境数据</h2>
+                <div class="sensor-value">
+                    <span class="sensor-label">温度</span>
+                    <span class="sensor-data" id="temperature">--°C</span>
+                </div>
+                <div class="sensor-value">
+                    <span class="sensor-label">湿度</span>
+                    <span class="sensor-data" id="humidity">--%</span>
+                </div>
+                <div class="sensor-value">
+                    <span class="sensor-label">光照强度</span>
+                    <span class="sensor-data" id="lightIntensity">-- lux</span>
+                </div>
+                <div class="sensor-value">
+                    <span class="sensor-label">CO2 浓度</span>
+                    <span class="sensor-data" id="co2">-- ppm</span>
+                </div>
+            </div>
+            
+            <!-- 土壤数据卡片 -->
+            <div class="card">
+                <h2>🌱 土壤数据</h2>
+                <div class="sensor-value">
+                    <span class="sensor-label">点位 A 湿度</span>
+                    <span class="sensor-data" id="soilA">--%</span>
+                </div>
+                <div class="sensor-value">
+                    <span class="sensor-label">点位 B 湿度</span>
+                    <span class="sensor-data" id="soilB">--%</span>
+                </div>
+                <div class="sensor-value">
+                    <span class="sensor-label">点位 C 湿度</span>
+                    <span class="sensor-data" id="soilC">--%</span>
+                </div>
+                <div class="sensor-value">
+                    <span class="sensor-label">平均湿度</span>
+                    <span class="sensor-data" id="soilAvg">--%</span>
+                </div>
+            </div>
+            
+            <!-- 设备控制卡片 -->
+            <div class="card">
+                <h2>🎮 设备控制</h2>
+                <button class="control-btn off cursor-target" id="btnIrrigation" onclick="toggleDevice('irrigation')">
+                    💧 灌溉系统：关闭
+                </button>
+                <button class="control-btn off cursor-target" id="btnLight" onclick="toggleDevice('light')">
+                    💡 补光系统：关闭
+                </button>
+                <button class="control-btn off cursor-target" id="btnFan" onclick="toggleDevice('fan')">
+                    🌀 通风系统：关闭
+                </button>
+                <button class="control-btn off cursor-target" id="btnShade" onclick="toggleDevice('shade')">
+                    ☂️ 遮阳系统：关闭
+                </button>
+                <button class="control-btn off cursor-target" style="background: #dc3545;" onclick="emergencyStop()">
+                    🚨 紧急停止
+                </button>
+            </div>
+            
+            <!-- 决策建议卡片 -->
+            <div class="card">
+                <h2>💡 决策建议</h2>
+                <div id="recommendations">
+                    <p style="color: #999;">点击刷新获取最新建议</p>
+                </div>
+            </div>
+            
+            <!-- 告警信息卡片 -->
+            <div class="card">
+                <h2>⚠️ 告警信息</h2>
+                <div id="alerts">
+                    <p style="color: #999;">暂无告警</p>
+                </div>
+            </div>
+            
+            <!-- 作物健康卡片 -->
+            <div class="card">
+                <h2>🍃 作物健康</h2>
+                
+                <!-- 图像上传区域 -->
+                <div style="margin-bottom: 15px;">
+                    <div class="image-preview" id="imagePreview" style="height: 150px;">
+                        <span id="imagePreviewText">📷 点击上传或拍照</span>
+                        <img id="uploadedImage" style="display: none; max-width: 100%; max-height: 100%; border-radius: 8px;" />
+                    </div>
+                    <input type="file" id="imageUpload" accept="image/*" style="display: none;" onchange="handleImageUpload(event)" />
+                    <button class="refresh-btn cursor-target" onclick="document.getElementById('imageUpload').click()" style="width: 100%; margin-bottom: 5px;">
+                        📤 上传图像
+                    </button>
+                    <button class="refresh-btn cursor-target" onclick="takeSnapshotAndAnalyze()" style="width: 100%; background: rgba(78, 204, 163, 0.8); box-shadow: 0 4px 15px rgba(78, 204, 163, 0.4);">
+                        📸 拍照分析
+                    </button>
+                </div>
+                
+                <!-- CNN 分析结果 -->
+                <div id="cnnAnalysisResult" style="display: none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <span style="color: #666; font-size: 0.9em;">置信度</span>
+                        <span id="cnnConfidence" style="font-weight: bold; color: #4ecca3;">--</span>
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <div style="height: 8px; background: #e0e0e0; border-radius: 4px; overflow: hidden;">
+                            <div id="cnnConfidenceBar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #e74c3c, #f39c12, #28a745); transition: width 0.5s;"></div>
+                        </div>
+                    </div>
+                    <div class="health-score good" id="healthScore">
+                        --
+                    </div>
+                    <p style="text-align: center; color: #666;" id="diseaseType">病害类型：--</p>
+                    <div id="classProbabilities" style="margin-top: 10px; max-height: 100px; overflow-y: auto;">
+                    </div>
+                </div>
+                
+                <!-- 传统分析结果 -->
+                <div id="traditionalAnalysis" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(0,0,0,0.1);">
+                    <h3 style="font-size: 1em; color: #666; margin-bottom: 10px;">🔍 传统分析方法</h3>
+                    <div id="healthRecommendations">
+                        <p style="color: #999;">点击刷新获取分析</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 系统状态卡片 -->
+            <div class="card">
+                <h2>📊 系统状态</h2>
+                <div class="sensor-value">
+                    <span class="sensor-label">运行状态</span>
+                    <span>
+                        <span class="status-indicator online"></span>
+                        运行中
+                    </span>
+                </div>
+                <div class="sensor-value">
+                    <span class="sensor-label">工作模式</span>
+                    <span id="systemMode">--</span>
+                </div>
+                <div class="sensor-value">
+                    <span class="sensor-label">灌溉运行时间</span>
+                    <span id="irrigationRuntime">-- 小时</span>
+                </div>
+                <div class="sensor-value">
+                    <span class="sensor-label">补光运行时间</span>
+                    <span id="lightRuntime">-- 小时</span>
+                </div>
+                <div class="sensor-value">
+                    <span class="sensor-label">通风运行时间</span>
+                    <span id="fanRuntime">-- 小时</span>
+                </div>
+            </div>
+            
+            <!-- 模拟器卡片 -->
+            <div class="card simulator-card">
+                <h2>🖥️ 网页跳转</h2>
+                <p style="color: #666; margin-bottom: 15px;">进入模拟器控制面板，自定义模拟数据参数。</p>
+                
+                <button class="refresh-btn cursor-target" onclick="window.location.href='/'" style="width: 100%; text-align: center; margin-bottom: 10px;">
+                    📢 系统宣传页
+                </button>
+
+                <button class="refresh-btn cursor-target" onclick="window.location.href='/simulator'" style="width: 100%; text-align: center; margin-bottom: 10px;">
+                    🎮 打开模拟器控制
+                </button>
+                
+                <button class="refresh-btn cursor-target" onclick="window.location.href='/mobile'" style="width: 100%; text-align: center; margin-bottom: 10px; background: rgba(102, 126, 234, 0.8); box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);">
+                    📱 移动端APK 打包/监测
+                </button>
+                
+                <!-- 模拟模式控制 -->
+                <div class="simulator-controls">
+                    <div>
+                        <h4>🎮 模拟模式</h4>
+                        <span id="modeLabel" class="simulation-status" style="font-size: 0.85em;">已启用</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="simulationToggle" checked onchange="toggleSimulationMode()">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+            
+            <!-- AI 咨询卡片 -->
+            <div class="card ai-chat-card">
+                <h2>🤖 AgriSense AI 咨询</h2>
+                <div class="ai-info">
+                    <div class="ai-avatar">🌱</div>
+                    <div style="flex: 1;">
+                        <strong>AgriSense AI</strong>
+                        <p class="ai-status online" id="aiStatus">● 在线 | 加载模型中...</p>
+                    </div>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <select id="modelSelect" onchange="switchModel()" style="padding: 8px 12px; border-radius: 5px; border: 1px solid #ddd; font-size: 0.85em;">
+                            <option value="">选择模型...</option>
+                        </select>
+                        <button class="clear-history-btn cursor-target" onclick="clearChatHistory()">
+                            🗑️ 清空对话
+                        </button>
+                    </div>
+                </div>
+                <div class="chat-container">
+                    <div class="chat-messages" id="chatMessages">
+                        <div class="chat-message assistant">
+                            <div class="message-role">AgriSense AI</div>
+                            <div>你好！我是 AgriSense AI，你的专属农业顾问。我可以帮助你分析大棚环境数据、提供作物管理建议、回答农业相关问题。有什么我可以帮你的吗？</div>
+                        </div>
+                    </div>
+                    <div class="chat-input-area">
+                        <input type="text" class="chat-input" id="chatInput" placeholder="输入你的问题..." onkeypress="handleChatInputKey(event)">
+                        <button class="chat-send-btn cursor-target" id="chatSendBtn" onclick="sendMessage()">发送</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ================= 光标 DOM 结构 ================= -->
+    <div class="target-cursor-wrapper">
+        <div class="target-cursor-dot"></div>
+        <div class="target-cursor-corner corner-tl"></div>
+        <div class="target-cursor-corner corner-tr"></div>
+        <div class="target-cursor-corner corner-br"></div>
+        <div class="target-cursor-corner corner-bl"></div>
+    </div>
+
+    <script>
+        // =========================================================================
+        // Vanilla JS 版 TargetCursor (完美翻译自 React + GSAP 源码)
+        // =========================================================================
+        class TargetCursor {
+            constructor(options = {}) {
+                this.targetSelector = options.targetSelector || '.cursor-target';
+                this.spinDuration = options.spinDuration || 2;
+                this.hoverDuration = options.hoverDuration || 0.2;
+                this.parallaxOn = options.parallaxOn !== undefined ? options.parallaxOn : true;
+
+                this.wrapper = document.querySelector('.target-cursor-wrapper');
+                this.dot = document.querySelector('.target-cursor-dot');
+                this.corners = Array.from(document.querySelectorAll('.target-cursor-corner'));
+
+                this.spinTl = null;
+                this.activeTarget = null;
+                this.currentLeaveHandler = null;
+                this.resumeTimeout = null;
+
+                this.isActive = false;
+                this.targetCornerPositions = null;
+                this.activeStrength = { current: 0 }; 
+                this.constants = { borderWidth: 3, cornerSize: 12 };
+
+                this.init();
+            }
+
+            isMobile() {
+                const hasTouchScreen = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+                const isSmallScreen = window.innerWidth <= 768;
+                return hasTouchScreen && isSmallScreen;
+            }
+
+            init() {
+                if (this.isMobile() || !this.wrapper) return;
+
+                gsap.set(this.wrapper, { x: window.innerWidth / 2, y: window.innerHeight / 2 });
+                this.createSpinTimeline();
+
+                const { cornerSize } = this.constants;
+                const restPositions = [
+                    { x: -cornerSize * 1.5, y: -cornerSize * 1.5 },
+                    { x: cornerSize * 0.5, y: -cornerSize * 1.5 },
+                    { x: cornerSize * 0.5, y: cornerSize * 0.5 },
+                    { x: -cornerSize * 1.5, y: cornerSize * 0.5 }
+                ];
+                this.corners.forEach((corner, i) => {
+                    gsap.set(corner, { x: restPositions[i].x, y: restPositions[i].y });
+                });
+
+                this.tickerFn = this.render.bind(this);
+
+                window.addEventListener('mousemove', e => {
+                    gsap.to(this.wrapper, { x: e.clientX, y: e.clientY, duration: 0.1, ease: 'power3.out' });
+                });
+
+                window.addEventListener('scroll', () => {
+                    if (!this.activeTarget) return;
+                    const mouseX = gsap.getProperty(this.wrapper, 'x');
+                    const mouseY = gsap.getProperty(this.wrapper, 'y');
+                    const elementUnderMouse = document.elementFromPoint(mouseX, mouseY);
+                    const isStillOverTarget = elementUnderMouse && (elementUnderMouse === this.activeTarget || elementUnderMouse.closest(this.targetSelector) === this.activeTarget);
+                    if (!isStillOverTarget && this.currentLeaveHandler) {
+                        this.currentLeaveHandler();
+                    }
+                }, { passive: true });
+
+                window.addEventListener('mousedown', () => {
+                    gsap.to(this.dot, { scale: 0.7, duration: 0.3 });
+                    gsap.to(this.wrapper, { scale: 0.9, duration: 0.2 });
+                });
+                window.addEventListener('mouseup', () => {
+                    gsap.to(this.dot, { scale: 1, duration: 0.3 });
+                    gsap.to(this.wrapper, { scale: 1, duration: 0.2 });
+                });
+
+                window.addEventListener('mouseover', e => this.handleEnter(e), { passive: true });
+            }
+
+            createSpinTimeline() {
+                if (this.spinTl) this.spinTl.kill();
+                this.spinTl = gsap.timeline({ repeat: -1 }).to(this.wrapper, { rotation: '+=360', duration: this.spinDuration, ease: 'none' });
+            }
+
+            render() {
+                if (!this.targetCornerPositions) return;
+
+                const strength = this.activeStrength.current;
+                if (strength === 0) return;
+
+                const cursorX = gsap.getProperty(this.wrapper, 'x');
+                const cursorY = gsap.getProperty(this.wrapper, 'y');
+
+                this.corners.forEach((corner, i) => {
+                    const currentX = gsap.getProperty(corner, 'x');
+                    const currentY = gsap.getProperty(corner, 'y');
+
+                    const targetX = this.targetCornerPositions[i].x - cursorX;
+                    const targetY = this.targetCornerPositions[i].y - cursorY;
+
+                    const finalX = currentX + (targetX - currentX) * strength;
+                    const finalY = currentY + (targetY - currentY) * strength;
+
+                    const duration = strength >= 0.99 ? (this.parallaxOn ? 0.2 : 0) : 0.05;
+
+                    gsap.to(corner, {
+                        x: finalX, y: finalY, duration: duration,
+                        ease: duration === 0 ? 'none' : 'power1.out', overwrite: 'auto'
+                    });
+                });
+            }
+
+            handleEnter(e) {
+                const target = e.target.closest(this.targetSelector);
+                if (!target || target === this.activeTarget) return;
+
+                if (this.activeTarget) this.cleanupTarget();
+                if (this.resumeTimeout) clearTimeout(this.resumeTimeout);
+
+                this.activeTarget = target;
+                this.corners.forEach(corner => gsap.killTweensOf(corner));
+
+                gsap.killTweensOf(this.wrapper, 'rotation');
+                if (this.spinTl) this.spinTl.pause();
+                gsap.set(this.wrapper, { rotation: 0 });
+
+                const rect = target.getBoundingClientRect();
+                const { borderWidth, cornerSize } = this.constants;
+                const cursorX = gsap.getProperty(this.wrapper, 'x');
+                const cursorY = gsap.getProperty(this.wrapper, 'y');
+
+                this.targetCornerPositions = [
+                    { x: rect.left - borderWidth, y: rect.top - borderWidth },
+                    { x: rect.right + borderWidth - cornerSize, y: rect.top - borderWidth },
+                    { x: rect.right + borderWidth - cornerSize, y: rect.bottom + borderWidth - cornerSize },
+                    { x: rect.left - borderWidth, y: rect.bottom + borderWidth - cornerSize }
+                ];
+
+                this.isActive = true;
+                gsap.ticker.add(this.tickerFn);
+
+                gsap.to(this.activeStrength, { current: 1, duration: this.hoverDuration, ease: 'power2.out' });
+
+                this.corners.forEach((corner, i) => {
+                    gsap.to(corner, {
+                        x: this.targetCornerPositions[i].x - cursorX,
+                        y: this.targetCornerPositions[i].y - cursorY,
+                        duration: 0.2, ease: 'power2.out'
+                    });
+                });
+
+                this.currentLeaveHandler = () => this.handleLeave();
+                target.addEventListener('mouseleave', this.currentLeaveHandler);
+            }
+
+            handleLeave() {
+                gsap.ticker.remove(this.tickerFn);
+                this.isActive = false;
+                this.targetCornerPositions = null;
+                gsap.set(this.activeStrength, { current: 0, overwrite: true });
+
+                const prevTarget = this.activeTarget;
+                this.activeTarget = null;
+
+                gsap.killTweensOf(this.corners);
+                const { cornerSize } = this.constants;
+                const restPositions = [
+                    { x: -cornerSize * 1.5, y: -cornerSize * 1.5 },
+                    { x: cornerSize * 0.5, y: -cornerSize * 1.5 },
+                    { x: cornerSize * 0.5, y: cornerSize * 0.5 },
+                    { x: -cornerSize * 1.5, y: cornerSize * 0.5 }
+                ];
+
+                this.corners.forEach((corner, i) => {
+                    gsap.to(corner, { x: restPositions[i].x, y: restPositions[i].y, duration: 0.3, ease: 'power3.out' });
+                });
+
+                this.resumeTimeout = setTimeout(() => {
+                    if (!this.activeTarget && this.spinTl) {
+                        const currentRotation = gsap.getProperty(this.wrapper, 'rotation');
+                        const normalizedRotation = currentRotation % 360;
+                        this.spinTl.kill();
+                        this.spinTl = gsap.timeline({ repeat: -1 }).to(this.wrapper, { rotation: '+=360', duration: this.spinDuration, ease: 'none' });
+                        gsap.to(this.wrapper, {
+                            rotation: normalizedRotation + 360,
+                            duration: this.spinDuration * (1 - normalizedRotation / 360),
+                            ease: 'none',
+                            onComplete: () => this.spinTl.restart()
+                        });
+                    }
+                }, 50);
+
+                this.cleanupTarget(prevTarget);
+            }
+
+            cleanupTarget(target = this.activeTarget) {
+                if (target && this.currentLeaveHandler) {
+                    target.removeEventListener('mouseleave', this.currentLeaveHandler);
+                }
+                this.currentLeaveHandler = null;
+            }
+        }
+
+        // 初始化目标光标挂载
+        window.addEventListener('DOMContentLoaded', () => {
+            new TargetCursor({
+                targetSelector: '.cursor-target', 
+                spinDuration: 3, 
+                hoverDuration: 0.2 
+            });
+        });
+
+        let deviceStates = {
+            irrigation: false,
+            light: false,
+            fan: false,
+            shade: false
+        };
+        
+        // 刷新所有数据
+        async function refreshAll() {
+            await refreshSensors();
+            await refreshDecisions();
+            await refreshActuators();
+        }
+        
+        // 刷新传感器数据
+        async function refreshSensors() {
+            try {
+                const response = await fetch('/api/sensors/all');
+                const data = await response.json();
+                
+                // 环境数据
+                if (data.environment) {
+                    updateSensor('temperature', data.environment.temperature, '°C', 18, 30);
+                    updateSensor('humidity', data.environment.humidity, '%', 45, 75);
+                    updateSensor('lightIntensity', data.environment.light, ' lux', 2000, 8000);
+                    updateSensor('co2', data.environment.co2, ' ppm', 400, 1200);
+                }
+                
+                // 土壤数据
+                if (data.soil && data.soil.points) {
+                    const moistures = [];
+                    data.soil.points.forEach((point, index) => {
+                        const letter = String.fromCharCode(65 + index); // A, B, C
+                        document.getElementById('soil' + letter).textContent = point.moisture.toFixed(1) + '%';
+                        moistures.push(point.moisture);
+                    });
+                    if (moistures.length > 0) {
+                        const avg = moistures.reduce((a, b) => a + b, 0) / moistures.length;
+                        updateSensor('soilAvg', avg.toFixed(1), '%', 35, 65);
+                    }
+                }
+                
+                document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+            } catch (error) {
+                console.error('刷新传感器数据失败:', error);
+            }
+        }
+        
+        // 更新传感器显示
+        function updateSensor(id, value, unit, min, max) {
+            const element = document.getElementById(id);
+            if (value !== undefined && value !== null) {
+                element.textContent = value + unit;
+                element.className = 'sensor-data';
+                if (value < min || value > max) {
+                    element.classList.add('warning');
+                } else {
+                    element.classList.add('good');
+                }
+            }
+        }
+        
+        // 刷新决策建议
+        async function refreshDecisions() {
+            try {
+                const response = await fetch('/api/decisions');
+                const data = await response.json();
+                
+                // 显示建议
+                const recContainer = document.getElementById('recommendations');
+                if (data.llm_advice && data.llm_advice.recommendations) {
+                    recContainer.innerHTML = data.llm_advice.recommendations
+                        .map(r => `<div class="recommendation">${r}</div>`).join('');
+                }
+                
+                // 显示告警
+                const alertContainer = document.getElementById('alerts');
+                const alerts = data.rules?.alerts || [];
+                if (alerts.length > 0) {
+                    alertContainer.innerHTML = alerts.map(a => 
+                        `<div class="alert ${a.priority === 'critical' ? 'danger' : a.priority === 'high' ? 'warning' : 'info'}">
+                            ${a.message}
+                        </div>`
+                    ).join('');
+                } else {
+                    alertContainer.innerHTML = '<p style="color: #999;">暂无告警</p>';
+                }
+            } catch (error) {
+                console.error('刷新决策数据失败:', error);
+            }
+        }
+        
+        // 刷新执行器状态
+        async function refreshActuators() {
+            try {
+                const response = await fetch('/api/actuators/status');
+                const data = await response.json();
+                
+                if (data.devices) {
+                    for (const [device, info] of Object.entries(data.devices)) {
+                        deviceStates[device] = info.is_on;
+                        updateButton(device);
+                    }
+                    
+                    // 更新运行时间
+                    if (data.total_runtime) {
+                        document.getElementById('irrigationRuntime').textContent = 
+                            (data.total_runtime.irrigation / 3600).toFixed(2) + ' 小时';
+                        document.getElementById('lightRuntime').textContent = 
+                            (data.total_runtime.light / 3600).toFixed(2) + ' 小时';
+                        document.getElementById('fanRuntime').textContent = 
+                            (data.total_runtime.fan / 3600).toFixed(2) + ' 小时';
+                    }
+                }
+            } catch (error) {
+                console.error('刷新执行器状态失败:', error);
+            }
+        }
+        
+        // 切换设备状态
+        async function toggleDevice(device) {
+            const newState = !deviceStates[device];
+            
+            try {
+                const response = await fetch(`/api/actuators/${device}/control`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ state: newState })
+                });
+                
+                if (response.ok) {
+                    deviceStates[device] = newState;
+                    updateButton(device);
+                }
+            } catch (error) {
+                console.error(`控制${device}失败:`, error);
+            }
+        }
+        
+        // 更新按钮显示
+        function updateButton(device) {
+            const btn = document.getElementById('btn' + device.charAt(0).toUpperCase() + device.slice(1));
+            const stateText = deviceStates[device] ? '开启' : '关闭';
+            btn.className = 'control-btn ' + (deviceStates[device] ? 'on' : 'off');
+            const icons = { irrigation: '💧', light: '💡', fan: '🌀', shade: '☂️' };
+            btn.textContent = icons[device] + ' ' + getDeviceName(device) + '：' + stateText;
+        }
+        
+        function getDeviceName(device) {
+            const names = { irrigation: '灌溉系统', light: '补光系统', fan: '通风系统', shade: '遮阳系统' };
+            return names[device] || device;
+        }
+        
+        // 紧急停止
+        async function emergencyStop() {
+            if (!confirm('确定要紧急停止所有设备吗？')) return;
+            
+            try {
+                await fetch('/api/actuators/stop', { method: 'POST' });
+                deviceStates = { irrigation: false, light: false, fan: false, shade: false };
+                for (const device in deviceStates) {
+                    updateButton(device);
+                }
+            } catch (error) {
+                console.error('紧急停止失败:', error);
+            }
+        }
+        
+        // 检查模拟模式状态
+        async function checkSimulationMode() {
+            try {
+                const response = await fetch('/api/status');
+                const data = await response.json();
+                const enabled = data.system.simulation_enabled;
+                
+                document.getElementById('simulationToggle').checked = enabled;
+                document.getElementById('modeLabel').textContent = enabled ? '已启用' : '已禁用';
+                document.getElementById('modeLabel').style.color = enabled ? '#4ecca3' : '#e74c3c';
+                document.getElementById('systemMode').textContent = enabled ? '模拟模式' : '硬件模式';
+            } catch (error) {
+                console.error('检查状态失败:', error);
+            }
+        }
+        
+        // 切换模拟模式
+        async function toggleSimulationMode() {
+            const enabled = document.getElementById('simulationToggle').checked;
+            const label = document.getElementById('modeLabel');
+            
+            try {
+                const response = await fetch('/api/simulation/toggle', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ enabled })
+                });
+                
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    label.textContent = enabled ? '已启用' : '已禁用';
+                    label.style.color = enabled ? '#4ecca3' : '#e74c3c';
+                    document.getElementById('systemMode').textContent = enabled ? '模拟模式' : '硬件模式';
+                    
+                    // 刷新数据
+                    await refreshAll();
+                }
+            } catch (error) {
+                console.error('切换模式失败:', error);
+                document.getElementById('simulationToggle').checked = !enabled;
+            }
+        }
+        
+        // 切换毛玻璃效果
+        function toggleGlassEffect() {
+            const enabled = document.getElementById('glassToggle').checked;
+            const status = document.getElementById('glassStatus');
+            const cards = document.querySelectorAll('.card');
+            
+            cards.forEach(card => {
+                if (enabled) {
+                    card.style.background = 'rgba(255, 255, 255, 0.35)';
+                    card.style.backdropFilter = 'blur(40px) saturate(200%)';
+                    card.style.webkitBackdropFilter = 'blur(40px) saturate(200%)';
+                    card.style.border = '1px solid rgba(255, 255, 255, 0.4)';
+                } else {
+                    card.style.background = 'rgba(255, 255, 255, 0.95)';
+                    card.style.backdropFilter = 'none';
+                    card.style.webkitBackdropFilter = 'none';
+                    card.style.border = '1px solid rgba(0, 0, 0, 0.1)';
+                }
+            });
+            
+            status.textContent = enabled ? '开启' : '关闭';
+            status.className = enabled ? 'glass-status' : 'glass-status disabled';
+        }
+        
+        // 粉末粒子系统
+        let particleContainer = null;
+        let isExploded = false;
+        
+        // 创建粒子容器
+        function createParticleContainer() {
+            if (!particleContainer) {
+                particleContainer = document.createElement('div');
+                particleContainer.className = 'particle-container';
+                document.body.appendChild(particleContainer);
+            }
+            return particleContainer;
+        }
+        
+        // 从卡片创建粉末粒子
+        function createParticlesFromCard(card) {
+            const rect = card.getBoundingClientRect();
+            const particles = [];
+            const particleCount = 40; // 每个卡片的粒子数量
+            const colors = ['#667eea', '#764ba2', '#4ecca3', '#e74c3c', '#f39c12', '#3498db'];
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                
+                // 随机大小
+                const size = 4 + Math.random() * 8;
+                particle.style.width = size + 'px';
+                particle.style.height = size + 'px';
+                
+                // 随机颜色
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                particle.style.background = color;
+                
+                // 随机位置（在卡片范围内）
+                const x = rect.left + Math.random() * rect.width;
+                const y = rect.top + Math.random() * rect.height;
+                particle.style.left = x + 'px';
+                particle.style.top = y + 'px';
+                
+                // 计算爆炸方向
+                const centerX = window.innerWidth / 2;
+                const centerY = window.innerHeight / 2;
+                const angle = Math.atan2(y - centerY, x - centerX) + (Math.random() - 0.5);
+                const distance = 150 + Math.random() * 200;
+                const tx = Math.cos(angle) * distance;
+                const ty = Math.sin(angle) * distance;
+                const rotate = (Math.random() - 0.5) * 720;
+                
+                document.body.appendChild(particle);
+                particles.push({ element: particle, tx, ty, rotate, x, y });
+            }
+            
+            return particles;
+        }
+        
+        // 爆炸效果
+        function explodeParticles(particles) {
+            particles.forEach(p => {
+                setTimeout(() => {
+                    p.element.style.transform = `translate(${p.tx}px, ${p.ty}px) rotate(${p.rotate}deg) scale(0)`;
+                    p.element.style.opacity = '0';
+                }, 10);
+            });
+        }
+        
+        // 恢复粒子
+        function restoreParticles(particles, targetPositions) {
+            particles.forEach((p, index) => {
+                const target = targetPositions[index];
+                if (target) {
+                    p.element.style.transition = 'all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)';
+                    p.element.style.left = target.x + 'px';
+                    p.element.style.top = target.y + 'px';
+                    p.element.style.transform = 'translate(0, 0) rotate(0deg) scale(1)';
+                    p.element.style.opacity = '1';
+                }
+            });
+        }
+        
+        // 清理粒子
+        function cleanupParticles(particles) {
+            particles.forEach(p => {
+                if (p.element.parentNode) {
+                    p.element.parentNode.removeChild(p.element);
+                }
+            });
+        }
+        
+        // 爆炸/恢复效果
+        function toggleExplode() {
+            const btn = document.getElementById('explodeBtn');
+            const cards = document.querySelectorAll('.card');
+            const header = document.querySelector('header');
+            const topLeftRefresh = document.querySelector('.top-left-refresh');
+            const topRightGlass = document.querySelector('.top-right-glass');
+            
+            isExploded = !isExploded;
+            
+            if (isExploded) {
+                btn.classList.add('active');
+                btn.textContent = '🔄';
+                
+                // 创建粒子容器
+                createParticleContainer();
+                
+                // 为每个卡片创建粒子
+                let allParticles = [];
+                cards.forEach((card, index) => {
+                    const particles = createParticlesFromCard(card);
+                    allParticles = allParticles.concat(particles);
+                });
+                
+                // 隐藏卡片
+                cards.forEach(card => {
+                    card.style.opacity = '0';
+                    card.style.transform = 'scale(0.8)';
+                });
+                
+                // 隐藏 header 和控制按钮
+                header.style.transition = 'opacity 0.5s';
+                header.style.opacity = '0';
+                topLeftRefresh.style.transition = 'opacity 0.5s';
+                topLeftRefresh.style.opacity = '0';
+                topRightGlass.style.transition = 'opacity 0.5s';
+                topRightGlass.style.opacity = '0';
+                
+                // 延迟后爆炸粒子
+                setTimeout(() => {
+                    explodeParticles(allParticles);
+                }, 100);
+                
+                // 存储粒子引用以便恢复
+                btn._particles = allParticles;
+                
+            } else {
+                btn.classList.remove('active');
+                btn.textContent = '💥';
+                
+                const particles = btn._particles || [];
+                
+                // 恢复卡片
+                cards.forEach(card => {
+                    card.style.opacity = '1';
+                    card.style.transform = 'scale(1)';
+                });
+                
+                // 显示 header 和控制按钮
+                header.style.transition = 'opacity 0.5s';
+                header.style.opacity = '1';
+                topLeftRefresh.style.transition = 'opacity 0.5s';
+                topLeftRefresh.style.opacity = '1';
+                topRightGlass.style.transition = 'opacity 0.5s';
+                topRightGlass.style.opacity = '1';
+                
+                // 计算粒子应该返回的目标位置
+                const targetPositions = [];
+                cards.forEach(card => {
+                    const rect = card.getBoundingClientRect();
+                    const particleCount = 40;
+                    for (let i = 0; i < particleCount; i++) {
+                        targetPositions.push({
+                            x: rect.left + Math.random() * rect.width,
+                            y: rect.top + Math.random() * rect.height
+                        });
+                    }
+                });
+                
+                // 恢复粒子
+                restoreParticles(particles, targetPositions);
+                
+                // 动画结束后清理
+                setTimeout(() => {
+                    cleanupParticles(particles);
+                    btn._particles = [];
+                }, 1000);
+            }
+        }
+        
+        // 页面加载时刷新数据
+        refreshAll();
+        checkSimulationMode();
+        loadAIModels();
+        loadCropHealthClasses();
+        
+        // 每 10 秒自动刷新
+        setInterval(refreshSensors, 10000);
+        
+        // ========== 作物健康分析 ==========
+        
+        // 处理图像上传
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.getElementById('uploadedImage');
+                const previewText = document.getElementById('imagePreviewText');
+                img.src = e.target.result;
+                img.style.display = 'block';
+                previewText.style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+            
+            // 上传并分析
+            analyzeUploadedImage(file);
+        }
+        
+        // 上传图像并分析
+        async function analyzeUploadedImage(file) {
+            const formData = new FormData();
+            formData.append('image', file);
+            
+            try {
+                const response = await fetch('/api/vision/crop-health/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                displayCNNAnalysisResult(data);
+            } catch (error) {
+                console.error('分析图像失败:', error);
+                alert('分析图像时发生错误');
+            }
+        }
+        
+        async function takeSnapshotAndAnalyze() {
+            try {
+                // 先拍照
+                const snapshotResponse = await fetch('/api/snapshot', { method: 'POST' });
+                const snapshotData = await snapshotResponse.json();
+                
+                // 检查是否是模拟模式
+                if (snapshotData.mode === 'simulation' || snapshotData.suggest_upload) {
+                    // 模拟模式下，直接触发文件上传
+                    alert('模拟模式下无法拍照，请上传本地图片进行分析');
+                    document.getElementById('imageUpload').click();
+                    return;
+                }
+                
+                if (snapshotData.success) {
+                    // 拍照成功后，显示照片预览
+                    const img = document.getElementById('uploadedImage');
+                    const previewText = document.getElementById('imagePreviewText');
+                    img.src = snapshotData.url || '/api/snapshots/' + snapshotData.filename;
+                    img.style.display = 'block';
+                    previewText.style.display = 'none';
+                    
+                    // 获取 CNN 分析结果
+                    const analysisResponse = await fetch('/api/vision/crop-health');
+                    const analysisData = await analysisResponse.json();
+                    
+                    displayCNNAnalysisResult(analysisData);
+                } else {
+                    // 其他错误情况
+                    alert('拍照失败：' + (snapshotData.error || '未知错误'));
+                }
+            } catch (error) {
+                console.error('拍照分析失败:', error);
+                alert('拍照分析时发生错误，请尝试上传图片');
+                document.getElementById('imageUpload').click();
+            }
+        }
+        
+        // 显示 CNN 分析结果
+        function displayCNNAnalysisResult(data) {
+            const resultContainer = document.getElementById('cnnAnalysisResult');
+            const healthScore = document.getElementById('healthScore');
+            const diseaseType = document.getElementById('diseaseType');
+            const confidence = document.getElementById('cnnConfidence');
+            const confidenceBar = document.getElementById('cnnConfidenceBar');
+            const classProbabilities = document.getElementById('classProbabilities');
+            
+            if (data.error) {
+                alert('分析失败：' + data.error);
+                return;
+            }
+            
+            // 显示结果容器
+            resultContainer.style.display = 'block';
+            
+            // 设置置信度
+            const confidencePercent = (data.confidence * 100).toFixed(1);
+            confidence.textContent = confidencePercent + '%';
+            confidenceBar.style.width = confidencePercent + '%';
+            
+            // 设置健康分数和病害类型
+            const healthPercent = data.health_score * 100;
+            healthScore.textContent = healthPercent.toFixed(0);
+            healthScore.className = 'health-score ' + getHealthClass(data.health_score);
+            
+            // 使用 disease_type 字段（后端返回的字段名）
+            // 如果 disease_type 是病害代码，使用 getClassName 转换为中文
+            let diseaseDisplay = '未知';
+            if (data.disease_type) {
+                diseaseDisplay = getClassName(data.disease_type);
+            } else if (data.prediction) {
+                diseaseDisplay = getClassName(data.prediction);
+            }
+            diseaseType.textContent = '病害类型：' + diseaseDisplay;
+            
+            // 显示各类别概率（后端返回的字段是 all_predictions）
+            const probabilities = data.class_probabilities || data.all_predictions;
+            if (probabilities && Object.keys(probabilities).length > 0) {
+                const sortedClasses = Object.entries(probabilities)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 5);
+                
+                classProbabilities.innerHTML = sortedClasses.map(([cls, prob]) => `
+                    <div style="display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid rgba(0,0,0,0.1);">
+                        <span style="color: #666; font-size: 0.85em;">${getClassName(cls)}</span>
+                        <span style="color: #4ecca3; font-weight: bold;">${(prob * 100).toFixed(1)}%</span>
+                    </div>
+                `).join('');
+            }
+            
+            // 显示推荐措施（后端返回的是 recommendation 单数字段）
+            if (data.recommendation) {
+                const healthRecContainer = document.getElementById('healthRecommendations');
+                healthRecContainer.innerHTML = `<div class="recommendation">${data.recommendation}</div>`;
+            }
+            // 也支持 recommendations 数组格式（兼容旧代码）
+            if (data.recommendations && data.recommendations.length > 0) {
+                const healthRecContainer = document.getElementById('healthRecommendations');
+                healthRecContainer.innerHTML = data.recommendations.map(r => 
+                    `<div class="recommendation">${r}</div>`
+                ).join('');
+            }
+        }
+        
+        // 获取健康分数对应的 CSS 类
+        function getHealthClass(score) {
+            if (score >= 0.7) return 'good';
+            if (score >= 0.4) return 'warning';
+            return 'danger';
+        }
+        
+        // 获取类别中文名称（与后端 CNN 作物分析器对应）
+        function getClassName(className) {
+            const nameMap = {
+                // 完整类别名称（与数据集完全对应）
+                'Tomato___healthy': '健康',
+                'Tomato___Bacterial_spot': '细菌性斑点病',
+                'Tomato___Early_blight': '早疫病',
+                'Tomato___Late_blight': '晚疫病',
+                'Tomato___Leaf_Mold': '叶霉病',
+                'Tomato___Septoria_leaf_spot': 'Septoria 叶斑病',
+                'Tomato___Spider_mites Two-spotted_spider_mite': '红蜘蛛虫害',
+                'Tomato___Target_Spot': '靶斑病',
+                'Tomato___Tomato_mosaic_virus': '花叶病毒病',
+                'Tomato___Tomato_Yellow_Leaf_Curl_Virus': '黄曲叶病毒病',
+                // 简化名称（兼容旧格式）
+                'healthy': '健康',
+                'early_blight': '早疫病',
+                'late_blight': '晚疫病',
+                'septoria_leaf_spot': 'Septoria 叶斑病',
+                'target_spot': '靶斑病',
+                'mosaic_virus': '花叶病毒病',
+                'leaf_mold': '叶霉病',
+                'bacterial_spot': '细菌性斑点病',
+                'spider_mites': '红蜘蛛虫害',
+                'yellow_leaf_curl': '黄曲叶病毒病'
+            };
+            // 先尝试精确匹配，如果没有则尝试部分匹配
+            if (nameMap[className]) {
+                return nameMap[className];
+            }
+            // 部分匹配：检查类别名称是否包含关键词
+            for (const [key, value] of Object.entries(nameMap)) {
+                if (className.toLowerCase().includes(key.toLowerCase())) {
+                    return value;
+                }
+            }
+            return className;
+        }
+        
+        // 加载 CNN 可识别的病害类别
+        async function loadCropHealthClasses() {
+            try {
+                const response = await fetch('/api/vision/crop-health/classes');
+                const data = await response.json();
+                
+                if (data.classes) {
+                    console.log('CNN 可识别的病害类别:', data.classes);
+                }
+            } catch (error) {
+                console.error('加载病害类别失败:', error);
+            }
+        }
+        
+        // 刷新作物健康数据
+        async function refreshCropHealth() {
+            try {
+                // 获取传统分析方法结果
+                const traditionalResponse = await fetch('/api/vision/leaf');
+                const traditionalData = await traditionalResponse.json();
+                
+                if (traditionalData.health_score !== undefined) {
+                    const healthScore = traditionalData.health_score * 100;
+                    const healthScoreEl = document.getElementById('healthScore');
+                    healthScoreEl.textContent = healthScore.toFixed(0);
+                    healthScoreEl.className = 'health-score ' + getHealthClass(traditionalData.health_score);
+                }
+                
+                if (traditionalData.disease_type) {
+                    document.getElementById('diseaseType').textContent = '病害类型：' + traditionalData.disease_type;
+                }
+                
+                if (traditionalData.recommendations && traditionalData.recommendations.length > 0) {
+                    const healthRecContainer = document.getElementById('healthRecommendations');
+                    healthRecContainer.innerHTML = traditionalData.recommendations.map(r => 
+                        `<div class="recommendation">${r}</div>`
+                    ).join('');
+                }
+            } catch (error) {
+                console.error('刷新作物健康数据失败:', error);
+            }
+        }
+        
+        // ========== AI 模型管理 ==========
+        
+        async function loadAIModels() {
+            try {
+                const response = await fetch('/api/ai/models');
+                const data = await response.json();
+                
+                const modelSelect = document.getElementById('modelSelect');
+                const aiStatus = document.getElementById('aiStatus');
+                
+                // 清空现有选项
+                modelSelect.innerHTML = '<option value="">选择模型...</option>';
+                
+                // 添加模型选项
+                if (data.models) {
+                    for (const [key, model] of Object.entries(data.models)) {
+                        if (model.enabled) {
+                            const option = document.createElement('option');
+                            option.value = key;
+                            option.textContent = model.name;
+                            modelSelect.appendChild(option);
+                        }
+                    }
+                }
+                
+                // 设置当前模型
+                if (data.current_model) {
+                    modelSelect.value = data.current_model;
+                    const currentModelInfo = data.models?.[data.current_model];
+                    if (currentModelInfo) {
+                        aiStatus.textContent = `● 在线 | 使用 ${currentModelInfo.name}`;
+                    }
+                }
+            } catch (error) {
+                console.error('加载模型列表失败:', error);
+                document.getElementById('aiStatus').textContent = '● 离线 | 无法加载模型';
+            }
+        }
+        
+        async function switchModel() {
+            const modelKey = document.getElementById('modelSelect').value;
+            if (!modelKey) return;
+            
+            const aiStatus = document.getElementById('aiStatus');
+            aiStatus.textContent = '● 切换中...';
+            
+            try {
+                const response = await fetch('/api/ai/models/switch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ model_key: modelKey })
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    const modelInfo = data.current_model;
+                    aiStatus.textContent = `● 在线 | 使用 ${modelInfo.name}`;
+                    addChatMessage('assistant', `模型已切换到 ${modelInfo.name}。有什么我可以帮你的吗？`);
+                } else {
+                    aiStatus.textContent = '● 在线 | 切换失败';
+                    alert('模型切换失败：' + data.error);
+                }
+            } catch (error) {
+                console.error('切换模型失败:', error);
+                aiStatus.textContent = '● 在线 | 切换失败';
+                alert('切换模型时发生错误');
+            }
+        }
+        
+        // ========== AI 聊天功能 ==========
+        
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            // 添加用户消息
+            addChatMessage('user', message);
+            input.value = '';
+            
+            // 禁用发送按钮
+            const sendBtn = document.getElementById('chatSendBtn');
+            sendBtn.disabled = true;
+            
+            // 显示正在输入指示
+            const messagesContainer = document.getElementById('chatMessages');
+            const typingIndicator = document.createElement('div');
+            typingIndicator.className = 'chat-message assistant';
+            typingIndicator.id = 'typingIndicator';
+            typingIndicator.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span> AgriSense AI 正在思考...</div>';
+            messagesContainer.appendChild(typingIndicator);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            try {
+                const response = await fetch('/api/ai/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: message,
+                        use_context: true
+                    })
+                });
+                
+                const data = await response.json();
+                
+                // 移除正在输入指示
+                const indicator = document.getElementById('typingIndicator');
+                if (indicator) indicator.remove();
+                
+                // 添加 AI 回复
+                if (data.error) {
+                    addChatMessage('assistant', '抱歉，我遇到了一个问题：' + data.response);
+                } else {
+                    addChatMessage('assistant', data.response);
+                }
+                
+            } catch (error) {
+                console.error('发送消息失败:', error);
+                
+                // 移除正在输入指示
+                const indicator = document.getElementById('typingIndicator');
+                if (indicator) indicator.remove();
+                
+                addChatMessage('assistant', '抱歉，连接服务器时出现问题，请稍后再试。');
+            } finally {
+                sendBtn.disabled = false;
+                input.focus();
+            }
+        }
+        
+        function addChatMessage(role, text) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'chat-message ' + role;
+            
+            const roleNames = { user: '你', assistant: 'AgriSense AI' };
+            messageDiv.innerHTML = `
+                <div class="message-role">${roleNames[role]}</div>
+                <div>${text}</div>
+            `;
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        function handleChatInputKey(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+        
+        async function clearChatHistory() {
+            if (!confirm('确定要清空对话历史吗？')) return;
+            
+            try {
+                await fetch('/api/ai/history', { method: 'DELETE' });
+                
+                // 清空界面
+                const messagesContainer = document.getElementById('chatMessages');
+                messagesContainer.innerHTML = `
+                    <div class="chat-message assistant">
+                        <div class="message-role">AgriSense AI</div>
+                        <div>对话历史已清空。有什么我可以帮你的吗？</div>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('清空对话历史失败:', error);
+            }
+        }
+
+        // ================= 开屏动画时间轴调度 (精细版) =================
+        window.addEventListener('DOMContentLoaded', () => {
+            const splashText = document.querySelector('.splash-text');
+            
+            // 4.5s: 抖动骤停,字母瞬间被纯白填满并发光
+            setTimeout(() => {
+                if (splashText) splashText.classList.add('fill');
+                
+                // 5.2s: 幕布拉开
+                setTimeout(() => {
+                    document.body.classList.add('ready');
+                    
+                    // 6.2s: 移除动画容器
+                    setTimeout(() => {
+                        const splashScreen = document.getElementById('splash-screen');
+                        if (splashScreen) splashScreen.remove();
+                    }, 1000);
+                }, 700);
+            }, 4500);
+        });
+
+    </script>
+</body>
+</html>

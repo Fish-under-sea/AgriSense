@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AgriSense - 模拟器控制</title>
+    <!-- 引入 GSAP 核心动画库 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -330,6 +332,36 @@
             font-size: 0.9em;
             margin-left: 5px;
         }
+
+        /* ================= 高级自旋包裹光标 (TargetCursor) 样式 ================= */
+        /* 仅在桌面端隐藏默认光标，保护移动端触摸体验 */
+        @media (min-width: 769px) {
+            * { cursor: none !important; }
+        }
+        
+        .target-cursor-wrapper {
+            position: fixed; top: 0; left: 0; width: 0; height: 0;
+            z-index: 99999; pointer-events: none;
+        }
+        .target-cursor-dot {
+            position: absolute; top: -3px; left: -3px; width: 6px; height: 6px;
+            background: #4ecca3; border-radius: 50%; box-shadow: 0 0 10px #4ecca3;
+        }
+        .target-cursor-corner {
+            position: absolute; width: 12px; height: 12px;
+            border-color: #4ecca3; border-style: solid; border-width: 0;
+            filter: drop-shadow(0 0 4px #4ecca3);
+        }
+        .corner-tl { top: 0; left: 0; border-top-width: 3px; border-left-width: 3px; }
+        .corner-tr { top: 0; left: 0; border-top-width: 3px; border-right-width: 3px; }
+        .corner-br { top: 0; left: 0; border-bottom-width: 3px; border-right-width: 3px; }
+        .corner-bl { top: 0; left: 0; border-bottom-width: 3px; border-left-width: 3px; }
+
+        /* 移动端彻底隐藏自定义光标 */
+        @media (max-width: 768px) {
+            .target-cursor-wrapper { display: none !important; }
+        }
+
     </style>
 </head>
 <body>
@@ -337,7 +369,8 @@
         <header>
             <h1>🌱 AgriSense 模拟器控制</h1>
             <p>手动调节传感器模拟数据</p>
-            <a href="/" class="nav-link">返回主界面</a>
+            <a href="/" class="nav-link cursor-target">← 返回主页</a>
+            <a href="/controller" class="nav-link cursor-target">控制器</a>
         </header>
         
         <!-- 模式切换 -->
@@ -345,7 +378,7 @@
             <label>模拟模式</label>
             <label class="toggle-switch">
                 <input type="checkbox" id="simulationToggle" checked>
-                <span class="toggle-slider"></span>
+                <span class="toggle-slider cursor-target"></span>
             </label>
             <span class="mode-label" id="modeLabel">已启用</span>
         </div>
@@ -367,9 +400,9 @@
                         <input type="range" class="slider" id="tempSlider" 
                                min="0" max="50" value="25" step="0.5">
                     </div>
-                    <div class="input-group">
+                    <div class="input-group ">
                         <input type="number" id="tempInput" value="25" step="0.5" min="0" max="50">
-                        <button onclick="setTemp()">设置</button>
+                        <button class="cursor-target" onclick="setTemp()">设置</button>
                     </div>
                 </div>
                 
@@ -384,7 +417,7 @@
                     </div>
                     <div class="input-group">
                         <input type="number" id="humidityInput" value="60" step="1" min="0" max="100">
-                        <button onclick="setHumidity()">设置</button>
+                        <button class="cursor-target" onclick="setHumidity()">设置</button>
                     </div>
                 </div>
                 
@@ -399,7 +432,7 @@
                     </div>
                     <div class="input-group">
                         <input type="number" id="lightInput" value="2500" step="100" min="0" max="10000">
-                        <button onclick="setLight()">设置</button>
+                        <button class="cursor-target" onclick="setLight()">设置</button>
                     </div>
                 </div>
                 
@@ -414,7 +447,7 @@
                     </div>
                     <div class="input-group">
                         <input type="number" id="co2Input" value="600" step="10" min="300" max="2000">
-                        <button onclick="setCo2()">设置</button>
+                        <button class="cursor-target" onclick="setCo2()">设置</button>
                     </div>
                 </div>
             </div>
@@ -436,7 +469,7 @@
                     </div>
                     <div class="input-group">
                         <input type="number" id="soil0Input" value="45" step="1" min="0" max="100">
-                        <button onclick="setSoil(0)">设置</button>
+                        <button class="cursor-target" onclick="setSoil(0)">设置</button>
                     </div>
                 </div>
                 
@@ -451,7 +484,7 @@
                     </div>
                     <div class="input-group">
                         <input type="number" id="soil1Input" value="50" step="1" min="0" max="100">
-                        <button onclick="setSoil(1)">设置</button>
+                        <button class="cursor-target" onclick="setSoil(1)">设置</button>
                     </div>
                 </div>
                 
@@ -466,7 +499,7 @@
                     </div>
                     <div class="input-group">
                         <input type="number" id="soil2Input" value="48" step="1" min="0" max="100">
-                        <button onclick="setSoil(2)">设置</button>
+                        <button class="cursor-target" onclick="setSoil(2)">设置</button>
                     </div>
                 </div>
                 
@@ -481,9 +514,9 @@
         
         <!-- 按钮组 -->
         <div class="button-group" style="justify-content: center;">
-            <button class="btn btn-primary" onclick="randomizeData()">🎲 随机化数据</button>
-            <button class="btn btn-secondary" onclick="resetToDefault()">🔄 恢复默认</button>
-            <button class="btn btn-secondary" onclick="refreshData()">🔄 刷新数据</button>
+            <button class="btn btn-primary cursor-target" onclick="randomizeData()">🎲 随机化数据</button>
+            <button class="btn btn-secondary cursor-target" onclick="resetToDefault()">🔄 恢复默认</button>
+            <button class="btn btn-secondary cursor-target" onclick="refreshData()">🔄 刷新数据</button>
         </div>
         
         <!-- 数据预览 -->
@@ -500,7 +533,228 @@
         </div>
     </div>
     
+    <!-- ================= 光标 DOM 结构 ================= -->
+    <div class="target-cursor-wrapper">
+        <div class="target-cursor-dot"></div>
+        <div class="target-cursor-corner corner-tl"></div>
+        <div class="target-cursor-corner corner-tr"></div>
+        <div class="target-cursor-corner corner-br"></div>
+        <div class="target-cursor-corner corner-bl"></div>
+    </div>
+
     <script>
+        // =========================================================================
+        // Vanilla JS 版 TargetCursor (完美翻译自 React + GSAP 源码)
+        // =========================================================================
+        class TargetCursor {
+            constructor(options = {}) {
+                this.targetSelector = options.targetSelector || '.cursor-target';
+                this.spinDuration = options.spinDuration || 2;
+                this.hoverDuration = options.hoverDuration || 0.2;
+                this.parallaxOn = options.parallaxOn !== undefined ? options.parallaxOn : true;
+
+                this.wrapper = document.querySelector('.target-cursor-wrapper');
+                this.dot = document.querySelector('.target-cursor-dot');
+                this.corners = Array.from(document.querySelectorAll('.target-cursor-corner'));
+
+                this.spinTl = null;
+                this.activeTarget = null;
+                this.currentLeaveHandler = null;
+                this.resumeTimeout = null;
+
+                this.isActive = false;
+                this.targetCornerPositions = null;
+                this.activeStrength = { current: 0 }; 
+                this.constants = { borderWidth: 3, cornerSize: 12 };
+
+                this.init();
+            }
+
+            isMobile() {
+                const hasTouchScreen = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+                const isSmallScreen = window.innerWidth <= 768;
+                return hasTouchScreen && isSmallScreen;
+            }
+
+            init() {
+                if (this.isMobile() || !this.wrapper) return;
+
+                gsap.set(this.wrapper, { x: window.innerWidth / 2, y: window.innerHeight / 2 });
+                this.createSpinTimeline();
+
+                const { cornerSize } = this.constants;
+                const restPositions = [
+                    { x: -cornerSize * 1.5, y: -cornerSize * 1.5 },
+                    { x: cornerSize * 0.5, y: -cornerSize * 1.5 },
+                    { x: cornerSize * 0.5, y: cornerSize * 0.5 },
+                    { x: -cornerSize * 1.5, y: cornerSize * 0.5 }
+                ];
+                this.corners.forEach((corner, i) => {
+                    gsap.set(corner, { x: restPositions[i].x, y: restPositions[i].y });
+                });
+
+                this.tickerFn = this.render.bind(this);
+
+                window.addEventListener('mousemove', e => {
+                    gsap.to(this.wrapper, { x: e.clientX, y: e.clientY, duration: 0.1, ease: 'power3.out' });
+                });
+
+                window.addEventListener('scroll', () => {
+                    if (!this.activeTarget) return;
+                    const mouseX = gsap.getProperty(this.wrapper, 'x');
+                    const mouseY = gsap.getProperty(this.wrapper, 'y');
+                    const elementUnderMouse = document.elementFromPoint(mouseX, mouseY);
+                    const isStillOverTarget = elementUnderMouse && (elementUnderMouse === this.activeTarget || elementUnderMouse.closest(this.targetSelector) === this.activeTarget);
+                    if (!isStillOverTarget && this.currentLeaveHandler) {
+                        this.currentLeaveHandler();
+                    }
+                }, { passive: true });
+
+                window.addEventListener('mousedown', () => {
+                    gsap.to(this.dot, { scale: 0.7, duration: 0.3 });
+                    gsap.to(this.wrapper, { scale: 0.9, duration: 0.2 });
+                });
+                window.addEventListener('mouseup', () => {
+                    gsap.to(this.dot, { scale: 1, duration: 0.3 });
+                    gsap.to(this.wrapper, { scale: 1, duration: 0.2 });
+                });
+
+                window.addEventListener('mouseover', e => this.handleEnter(e), { passive: true });
+            }
+
+            createSpinTimeline() {
+                if (this.spinTl) this.spinTl.kill();
+                this.spinTl = gsap.timeline({ repeat: -1 }).to(this.wrapper, { rotation: '+=360', duration: this.spinDuration, ease: 'none' });
+            }
+
+            render() {
+                if (!this.targetCornerPositions) return;
+
+                const strength = this.activeStrength.current;
+                if (strength === 0) return;
+
+                const cursorX = gsap.getProperty(this.wrapper, 'x');
+                const cursorY = gsap.getProperty(this.wrapper, 'y');
+
+                this.corners.forEach((corner, i) => {
+                    const currentX = gsap.getProperty(corner, 'x');
+                    const currentY = gsap.getProperty(corner, 'y');
+
+                    const targetX = this.targetCornerPositions[i].x - cursorX;
+                    const targetY = this.targetCornerPositions[i].y - cursorY;
+
+                    const finalX = currentX + (targetX - currentX) * strength;
+                    const finalY = currentY + (targetY - currentY) * strength;
+
+                    const duration = strength >= 0.99 ? (this.parallaxOn ? 0.2 : 0) : 0.05;
+
+                    gsap.to(corner, {
+                        x: finalX, y: finalY, duration: duration,
+                        ease: duration === 0 ? 'none' : 'power1.out', overwrite: 'auto'
+                    });
+                });
+            }
+
+            handleEnter(e) {
+                const target = e.target.closest(this.targetSelector);
+                if (!target || target === this.activeTarget) return;
+
+                if (this.activeTarget) this.cleanupTarget();
+                if (this.resumeTimeout) clearTimeout(this.resumeTimeout);
+
+                this.activeTarget = target;
+                this.corners.forEach(corner => gsap.killTweensOf(corner));
+
+                gsap.killTweensOf(this.wrapper, 'rotation');
+                if (this.spinTl) this.spinTl.pause();
+                gsap.set(this.wrapper, { rotation: 0 });
+
+                const rect = target.getBoundingClientRect();
+                const { borderWidth, cornerSize } = this.constants;
+                const cursorX = gsap.getProperty(this.wrapper, 'x');
+                const cursorY = gsap.getProperty(this.wrapper, 'y');
+
+                this.targetCornerPositions = [
+                    { x: rect.left - borderWidth, y: rect.top - borderWidth },
+                    { x: rect.right + borderWidth - cornerSize, y: rect.top - borderWidth },
+                    { x: rect.right + borderWidth - cornerSize, y: rect.bottom + borderWidth - cornerSize },
+                    { x: rect.left - borderWidth, y: rect.bottom + borderWidth - cornerSize }
+                ];
+
+                this.isActive = true;
+                gsap.ticker.add(this.tickerFn);
+
+                gsap.to(this.activeStrength, { current: 1, duration: this.hoverDuration, ease: 'power2.out' });
+
+                this.corners.forEach((corner, i) => {
+                    gsap.to(corner, {
+                        x: this.targetCornerPositions[i].x - cursorX,
+                        y: this.targetCornerPositions[i].y - cursorY,
+                        duration: 0.2, ease: 'power2.out'
+                    });
+                });
+
+                this.currentLeaveHandler = () => this.handleLeave();
+                target.addEventListener('mouseleave', this.currentLeaveHandler);
+            }
+
+            handleLeave() {
+                gsap.ticker.remove(this.tickerFn);
+                this.isActive = false;
+                this.targetCornerPositions = null;
+                gsap.set(this.activeStrength, { current: 0, overwrite: true });
+
+                const prevTarget = this.activeTarget;
+                this.activeTarget = null;
+
+                gsap.killTweensOf(this.corners);
+                const { cornerSize } = this.constants;
+                const restPositions = [
+                    { x: -cornerSize * 1.5, y: -cornerSize * 1.5 },
+                    { x: cornerSize * 0.5, y: -cornerSize * 1.5 },
+                    { x: cornerSize * 0.5, y: cornerSize * 0.5 },
+                    { x: -cornerSize * 1.5, y: cornerSize * 0.5 }
+                ];
+
+                this.corners.forEach((corner, i) => {
+                    gsap.to(corner, { x: restPositions[i].x, y: restPositions[i].y, duration: 0.3, ease: 'power3.out' });
+                });
+
+                this.resumeTimeout = setTimeout(() => {
+                    if (!this.activeTarget && this.spinTl) {
+                        const currentRotation = gsap.getProperty(this.wrapper, 'rotation');
+                        const normalizedRotation = currentRotation % 360;
+                        this.spinTl.kill();
+                        this.spinTl = gsap.timeline({ repeat: -1 }).to(this.wrapper, { rotation: '+=360', duration: this.spinDuration, ease: 'none' });
+                        gsap.to(this.wrapper, {
+                            rotation: normalizedRotation + 360,
+                            duration: this.spinDuration * (1 - normalizedRotation / 360),
+                            ease: 'none',
+                            onComplete: () => this.spinTl.restart()
+                        });
+                    }
+                }, 50);
+
+                this.cleanupTarget(prevTarget);
+            }
+
+            cleanupTarget(target = this.activeTarget) {
+                if (target && this.currentLeaveHandler) {
+                    target.removeEventListener('mouseleave', this.currentLeaveHandler);
+                }
+                this.currentLeaveHandler = null;
+            }
+        }
+
+        // 初始化目标光标挂载
+        window.addEventListener('DOMContentLoaded', () => {
+            new TargetCursor({
+                targetSelector: '.cursor-target', 
+                spinDuration: 3, 
+                hoverDuration: 0.2 
+            });
+        });
+
         let refreshTimer;
         const REFRESH_INTERVAL = 2000;
         
