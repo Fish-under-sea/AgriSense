@@ -278,6 +278,70 @@
         #analysis {
             scroll-margin-top: -125px;
         }
+
+        /* ================= Electric Border ================= */
+        .electric-border {
+            --electric-light-color: oklch(from var(--electric-border-color) l c h);
+            position: relative;
+            border-radius: inherit;
+            overflow: visible;
+            isolation: isolate;
+        }
+        .eb-canvas-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 2;
+        }
+        .eb-canvas {
+            display: block;
+        }
+        .eb-content {
+            position: relative;
+            border-radius: inherit;
+            z-index: 1;
+        }
+        .eb-layers {
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .eb-glow-1,
+        .eb-glow-2,
+        .eb-background-glow {
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            pointer-events: none;
+            box-sizing: border-box;
+        }
+        .eb-glow-1 {
+            border: 2px solid oklch(from var(--electric-border-color) l c h / 0.6);
+            filter: blur(1px);
+        }
+        .eb-glow-2 {
+            border: 2px solid var(--electric-light-color);
+            filter: blur(4px);
+        }
+        .eb-background-glow {
+            z-index: -1;
+            transform: scale(1.1);
+            filter: blur(32px);
+            opacity: 0.3;
+            background: linear-gradient(-30deg, var(--electric-light-color), transparent, var(--electric-border-color));
+        }
+        /* Override sm-github-card border when wrapped in electric-border */
+        .electric-border .sm-github-card {
+            border-color: transparent;
+        }
+        .electric-border .sm-github-card:hover {
+            border-color: transparent;
+            background: rgba(78, 204, 163, 0.06);
+        }
     </style>
 </head>
 <body>
@@ -303,6 +367,14 @@
                     <li class="sm-item-wrap"><div class="sm-item-inner"><a href="#vision" class="sm-panel-item">数据画像</a></div></li>
                 </ul>
             </nav>
+            <div class="electric-border" id="ebGithubCard" style="--electric-border-color: #4ecca3; border-radius: 20px;">
+              <div class="eb-canvas-container"><canvas class="eb-canvas" id="ebCanvas"></canvas></div>
+              <div class="eb-layers">
+                <div class="eb-glow-1"></div>
+                <div class="eb-glow-2"></div>
+                <div class="eb-background-glow"></div>
+              </div>
+              <div class="eb-content">
             <a class="sm-github-card" href="https://github.com/Fish-under-sea/AgriSense" target="_blank" rel="noopener">
                 <div class="sm-github-header">
                     <img class="sm-github-avatar" id="githubAvatar" src="https://avatars.githubusercontent.com/Fish-under-sea" alt="Fish-under-sea">
@@ -327,6 +399,8 @@
                     <span style="color:#4ecca3">查看仓库 →</span>
                 </div>
             </a>
+              </div><!-- eb-content -->
+            </div><!-- electric-border -->
         </div>
     </div>
 
@@ -1244,12 +1318,125 @@ void main() {
         });
     }
 
+    function initElectricBorder() {
+        const container = document.getElementById('ebGithubCard');
+        const canvas    = document.getElementById('ebCanvas');
+        if (!container || !canvas) return;
+
+        const color        = '#4ecca3';
+        const speed        = 1;
+        const chaos        = 0.12;
+        const borderRadius = 20;
+        const borderOffset = 60;
+        const displacement = 60;
+        const octaves      = 10;
+        const lacunarity   = 1.6;
+        const gain         = 0.7;
+        const frequency    = 10;
+        const baseFlatness = 0;
+
+        const ctx = canvas.getContext('2d');
+        let timeRef = 0, lastFrameTime = 0, animId = null;
+        let canvasW = 0, canvasH = 0;
+
+        function rnd(x) { return (Math.sin(x * 12.9898) * 43758.5453) % 1; }
+
+        function noise2D(x, y) {
+            const i = Math.floor(x), j = Math.floor(y);
+            const fx = x - i, fy = y - j;
+            const a = rnd(i + j*57), b = rnd(i+1 + j*57);
+            const c = rnd(i + (j+1)*57), d = rnd(i+1 + (j+1)*57);
+            const ux = fx*fx*(3-2*fx), uy = fy*fy*(3-2*fy);
+            return a*(1-ux)*(1-uy) + b*ux*(1-uy) + c*(1-ux)*uy + d*ux*uy;
+        }
+
+        function octNoise(x, seed) {
+            let y = 0, amp = chaos, freq = frequency;
+            for (let i = 0; i < octaves; i++) {
+                const oa = i === 0 ? amp * baseFlatness : amp;
+                y += oa * noise2D(freq*x + seed*100, timeRef*freq*0.3);
+                freq *= lacunarity; amp *= gain;
+            }
+            return y;
+        }
+
+        function cornerPt(cx, cy, r, sa, arc, p) {
+            const a = sa + p*arc;
+            return { x: cx + r*Math.cos(a), y: cy + r*Math.sin(a) };
+        }
+
+        function rectPt(t, l, top, w, h, r) {
+            const sw = w-2*r, sh = h-2*r, ca = Math.PI*r/2;
+            const total = 2*sw + 2*sh + 4*ca;
+            let d = t*total, acc = 0;
+            if (d <= acc+sw) return { x: l+r+(d-acc)/sw*sw, y: top };
+            acc += sw;
+            if (d <= acc+ca) return cornerPt(l+w-r, top+r, r, -Math.PI/2, Math.PI/2, (d-acc)/ca);
+            acc += ca;
+            if (d <= acc+sh) return { x: l+w, y: top+r+(d-acc)/sh*sh };
+            acc += sh;
+            if (d <= acc+ca) return cornerPt(l+w-r, top+h-r, r, 0, Math.PI/2, (d-acc)/ca);
+            acc += ca;
+            if (d <= acc+sw) return { x: l+w-r-(d-acc)/sw*sw, y: top+h };
+            acc += sw;
+            if (d <= acc+ca) return cornerPt(l+r, top+h-r, r, Math.PI/2, Math.PI/2, (d-acc)/ca);
+            acc += ca;
+            if (d <= acc+sh) return { x: l, y: top+h-r-(d-acc)/sh*sh };
+            acc += sh;
+            return cornerPt(l+r, top+r, r, Math.PI, Math.PI/2, (d-acc)/ca);
+        }
+
+        function updateSize() {
+            const rect = container.getBoundingClientRect();
+            const w = rect.width + borderOffset*2, h = rect.height + borderOffset*2;
+            const dpr = Math.min(window.devicePixelRatio||1, 2);
+            canvas.width = w*dpr; canvas.height = h*dpr;
+            canvas.style.width = w+'px'; canvas.style.height = h+'px';
+            ctx.setTransform(1,0,0,1,0,0); ctx.scale(dpr, dpr);
+            canvasW = w; canvasH = h;
+        }
+
+        function draw(now) {
+            const delta = (now - lastFrameTime)/1000;
+            timeRef += delta*speed; lastFrameTime = now;
+            const dpr = Math.min(window.devicePixelRatio||1, 2);
+            ctx.setTransform(1,0,0,1,0,0);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.scale(dpr, dpr);
+            ctx.strokeStyle = color; ctx.lineWidth = 1.5;
+            ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+
+            const l = borderOffset, top = borderOffset;
+            const bw = canvasW - 2*borderOffset, bh = canvasH - 2*borderOffset;
+            const r = Math.min(borderRadius, Math.min(bw, bh)/2);
+            const perim = 2*(bw+bh) + 2*Math.PI*r;
+            const samples = Math.floor(perim/2);
+
+            ctx.beginPath();
+            for (let i = 0; i <= samples; i++) {
+                const p = i/samples;
+                const pt = rectPt(p, l, top, bw, bh, r);
+                const dx = octNoise(p*8, 0)*displacement;
+                const dy = octNoise(p*8, 1)*displacement;
+                if (i === 0) ctx.moveTo(pt.x+dx, pt.y+dy);
+                else ctx.lineTo(pt.x+dx, pt.y+dy);
+            }
+            ctx.closePath(); ctx.stroke();
+            animId = requestAnimationFrame(draw);
+        }
+
+        updateSize();
+        new ResizeObserver(updateSize).observe(container);
+        animId = requestAnimationFrame(draw);
+    }
+
     window.addEventListener('DOMContentLoaded', () => {
         initLightningBackground(); // 初始化新的闪电背景
         initScrollFloat();
         initMenu();
         initScrollStack();
         initGithubAvatar();
+        initElectricBorder();
         initSphereGallery();
     });
     </script>
