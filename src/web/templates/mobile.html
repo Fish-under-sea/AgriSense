@@ -13,76 +13,108 @@
             box-sizing: border-box;
         }
         
+        /* 视频背景全屏层 */
+        .video-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: -2;
+            pointer-events: none;
+        }
+        
+        /* 半透明遮罩层，保证文字可读性 */
+        .overlay-mask {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: -1;
+            pointer-events: none;
+        }
+        
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             min-height: 100vh;
             padding: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #333;
+            background: #0a0a1a;
+            color: #f0f0f0;
         }
         
         .container {
             max-width: 900px;
             margin: 0 auto;
+            position: relative;
+            z-index: 1;
         }
         
         header {
             text-align: center;
-            color: white;
             margin-bottom: 30px;
             padding: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 20px;
+            backdrop-filter: blur(8px);
         }
         
         header h1 {
             font-size: 2em;
             margin-bottom: 10px;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+            color: #fff;
         }
         
         header p {
             opacity: 0.95;
-            text-shadow: 0 1px 5px rgba(0,0,0,0.3);
+            text-shadow: 0 1px 5px rgba(0,0,0,0.5);
         }
 
         .back-btn {
             display: inline-block;
-            background: rgba(255, 255, 255, 0.3);
-            backdrop-filter: blur(10px);
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
             color: white;
-            border: none;
+            border: 1px solid rgba(255,255,255,0.3);
             padding: 10px 20px;
             border-radius: 8px;
             cursor: pointer;
             text-decoration: none;
             transition: all 0.3s ease;
             margin-bottom: 20px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            margin-right: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
         }
         
         .back-btn:hover {
-            background: rgba(255, 255, 255, 0.4);
+            background: rgba(102, 126, 234, 0.8);
             transform: translateY(-2px);
+            border-color: #4ecca3;
         }
         
         .card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(40px) saturate(200%);
-            border-radius: 15px;
+            background: rgba(20, 25, 45, 0.88);
+            backdrop-filter: blur(12px);
+            border-radius: 20px;
             padding: 25px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
             margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.2);
         }
         
         .card h2 {
-            color: #667eea;
+            color: #4ecca3;
             margin-bottom: 15px;
             font-size: 1.3em;
-            border-bottom: 2px solid #667eea;
+            border-bottom: 2px solid #4ecca3;
             padding-bottom: 10px;
         }
         
         .card h3 {
-            color: #333;
+            color: #f0f0f0;
             margin: 15px 0 10px 0;
             font-size: 1.1em;
         }
@@ -93,17 +125,18 @@
         }
         
         .build-info {
-            background: #f8f9fa;
+            background: rgba(30, 35, 55, 0.7);
             border-radius: 10px;
             padding: 20px;
             margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
         }
         
         .build-info-row {
             display: flex;
             justify-content: space-between;
             padding: 10px 0;
-            border-bottom: 1px solid #e0e0e0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
         }
         
         .build-info-row:last-child {
@@ -111,12 +144,12 @@
         }
         
         .build-info-label {
-            color: #666;
+            color: #ccc;
             font-weight: 500;
         }
         
         .build-info-value {
-            color: #333;
+            color: #fff;
             font-weight: bold;
         }
         
@@ -134,31 +167,38 @@
         .directory-input-group input {
             flex: 1;
             padding: 12px 15px;
-            border: 2px solid #ddd;
+            border: 2px solid rgba(255,255,255,0.2);
             border-radius: 8px;
             font-size: 1em;
             transition: border-color 0.3s;
+            background: rgba(0,0,0,0.5);
+            color: #fff;
         }
         
         .directory-input-group input:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #4ecca3;
+        }
+        
+        .directory-input-group input::placeholder {
+            color: #aaa;
         }
         
         .browse-btn {
             padding: 12px 25px;
-            background: #667eea;
-            color: white;
+            background: #4ecca3;
+            color: #1a1a2e;
             border: none;
             border-radius: 8px;
             cursor: pointer;
             font-size: 1em;
+            font-weight: bold;
             transition: all 0.3s;
             white-space: nowrap;
         }
         
         .browse-btn:hover {
-            background: #5a6fd6;
+            background: #45b08c;
             transform: translateY(-2px);
         }
         
@@ -166,7 +206,7 @@
         .build-btn {
             width: 100%;
             padding: 15px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: linear-gradient(135deg, #4ecca3, #2c7a5a);
             color: white;
             border: none;
             border-radius: 10px;
@@ -174,16 +214,16 @@
             font-weight: bold;
             cursor: pointer;
             transition: all 0.3s;
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 6px 20px rgba(78, 204, 163, 0.4);
         }
         
         .build-btn:hover:not(:disabled) {
             transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+            box-shadow: 0 8px 25px rgba(78, 204, 163, 0.6);
         }
         
         .build-btn:disabled {
-            background: #ccc;
+            background: #555;
             cursor: not-allowed;
             box-shadow: none;
         }
@@ -197,14 +237,14 @@
         .progress-bar {
             width: 100%;
             height: 20px;
-            background: #e0e0e0;
+            background: rgba(255,255,255,0.2);
             border-radius: 10px;
             overflow: hidden;
         }
         
         .progress-fill {
             height: 100%;
-            background: linear-gradient(90deg, #667eea, #764ba2);
+            background: linear-gradient(90deg, #4ecca3, #2c7a5a);
             width: 0%;
             transition: width 0.3s;
             border-radius: 10px;
@@ -213,13 +253,13 @@
         .progress-text {
             text-align: center;
             margin-top: 10px;
-            color: #666;
+            color: #ccc;
             font-size: 0.9em;
         }
         
         /* 构建日志 */
         .log-container {
-            background: #1e1e1e;
+            background: rgba(0, 0, 0, 0.6);
             color: #d4d4d4;
             padding: 15px;
             border-radius: 8px;
@@ -228,22 +268,23 @@
             font-family: 'Courier New', monospace;
             font-size: 0.85em;
             margin-top: 15px;
+            border: 1px solid rgba(255,255,255,0.1);
         }
         
         .log-entry {
             margin-bottom: 5px;
             padding: 5px;
-            border-left: 3px solid #667eea;
+            border-left: 3px solid #4ecca3;
             padding-left: 10px;
         }
         
         .log-entry.error {
-            border-left-color: #dc3545;
+            border-left-color: #e74c3c;
             color: #f48771;
         }
         
         .log-entry.success {
-            border-left-color: #28a745;
+            border-left-color: #4ecca3;
             color: #85d985;
         }
         
@@ -270,43 +311,44 @@
         }
         
         .download-success {
-            color: #28a745;
+            color: #4ecca3;
             font-size: 1.2em;
             margin-bottom: 20px;
         }
         
         .download-link {
             display: inline-block;
-            background: linear-gradient(135deg, #28a745, #20c997);
+            background: linear-gradient(135deg, #4ecca3, #2c7a5a);
             color: white;
             padding: 15px 40px;
             border-radius: 30px;
             text-decoration: none;
             font-size: 1.1em;
             font-weight: bold;
-            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+            box-shadow: 0 6px 20px rgba(78, 204, 163, 0.4);
             transition: all 0.3s ease;
             margin: 10px;
         }
         
         .download-link:hover {
             transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(40, 167, 69, 0.6);
+            box-shadow: 0 8px 25px rgba(78, 204, 163, 0.6);
         }
         
         .file-info {
-            background: #f8f9fa;
+            background: rgba(30, 35, 55, 0.7);
             border-radius: 10px;
             padding: 15px;
             margin: 20px 0;
             text-align: left;
+            border: 1px solid rgba(255,255,255,0.1);
         }
         
         .file-info-row {
             display: flex;
             justify-content: space-between;
             padding: 8px 0;
-            border-bottom: 1px solid #e0e0e0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
         }
         
         .file-info-row:last-child {
@@ -315,8 +357,8 @@
         
         /* 信息提示 */
         .info-box {
-            background: rgba(102, 126, 234, 0.1);
-            border-left: 4px solid #667eea;
+            background: rgba(78, 204, 163, 0.15);
+            border-left: 4px solid #4ecca3;
             padding: 15px;
             border-radius: 5px;
             margin: 15px 0;
@@ -325,10 +367,11 @@
         .info-box p {
             margin: 5px 0;
             font-size: 0.9em;
+            color: #ddd;
         }
         
         .info-box strong {
-            color: #667eea;
+            color: #4ecca3;
         }
         
         /* 步骤列表 */
@@ -341,6 +384,7 @@
             padding: 12px 0;
             padding-left: 40px;
             position: relative;
+            color: #ddd;
         }
         
         .step-list li::before {
@@ -349,8 +393,8 @@
             left: 0;
             width: 28px;
             height: 28px;
-            background: #667eea;
-            color: white;
+            background: #4ecca3;
+            color: #1a1a2e;
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -360,7 +404,7 @@
         }
         
         .step-list li.completed::before {
-            background: #28a745;
+            background: #4ecca3;
             content: "✓";
         }
         
@@ -384,7 +428,7 @@
         }
         
         .status-indicator.ready {
-            background: #28a745;
+            background: #4ecca3;
         }
         
         .status-indicator.building {
@@ -393,11 +437,11 @@
         }
         
         .status-indicator.complete {
-            background: #28a745;
+            background: #4ecca3;
         }
         
         .status-indicator.error {
-            background: #dc3545;
+            background: #e74c3c;
         }
         
         @media (max-width: 600px) {
@@ -419,7 +463,6 @@
         }
 
         /* ================= 高级自旋包裹光标 (TargetCursor) 样式 ================= */
-        /* 仅在桌面端隐藏默认光标，保护移动端触摸体验 */
         @media (min-width: 769px) {
             * { cursor: none !important; }
         }
@@ -442,7 +485,6 @@
         .corner-br { top: 0; left: 0; border-bottom-width: 3px; border-right-width: 3px; }
         .corner-bl { top: 0; left: 0; border-bottom-width: 3px; border-left-width: 3px; }
 
-        /* 移动端彻底隐藏自定义光标 */
         @media (max-width: 768px) {
             .target-cursor-wrapper { display: none !important; }
         }
@@ -450,6 +492,14 @@
     </style>
 </head>
 <body>
+    <!-- 视频背景 -->
+    <video class="video-background" autoplay loop muted playsinline>
+        <source src="/static/Mario.mp4" type="video/mp4">
+        您的浏览器不支持视频背景。
+    </video>
+    <!-- 暗色遮罩 -->
+    <div class="overlay-mask"></div>
+    
     <div class="container">
         <a href="/" class="back-btn cursor-target">← 返回主页</a>
         <a href="/controller" class="back-btn cursor-target">控制器</a>
@@ -498,7 +548,7 @@
             <!-- 目录选择 -->
             <div class="directory-selector">
                 <h3>📁 输出目录设置</h3>
-                <p style="color: #666; font-size: 0.9em; margin-bottom: 10px;">
+                <p style="color: #aaa; font-size: 0.9em; margin-bottom: 10px;">
                     选择 APK 文件保存的目录位置
                 </p>
                 <div class="directory-input-group">
@@ -579,14 +629,14 @@
             </div>
             
             <h3>🔧 配置服务器地址</h3>
-            <p style="color: #666; font-size: 0.9em; margin-top: 10px;">
+            <p style="color: #aaa; font-size: 0.9em; margin-top: 10px;">
                 首次打开应用时，需要配置服务器地址以连接到大棚监控系统。
                 服务器地址格式：http://[服务器 IP]:5000/controller
             </p>
         </div>
     </div>
     
-    <!-- ================= 光标 DOM 结构 ================= -->
+    <!-- 光标 DOM 结构 -->
     <div class="target-cursor-wrapper">
         <div class="target-cursor-dot"></div>
         <div class="target-cursor-corner corner-tl"></div>
@@ -596,9 +646,7 @@
     </div>
 
     <script>
-        // =========================================================================
-        // Vanilla JS 版 TargetCursor (完美翻译自 React + GSAP 源码)
-        // =========================================================================
+        // TargetCursor 类 (保持不变)
         class TargetCursor {
             constructor(options = {}) {
                 this.targetSelector = options.targetSelector || '.cursor-target';
@@ -799,7 +847,6 @@
             }
         }
 
-        // 初始化目标光标挂载
         window.addEventListener('DOMContentLoaded', () => {
             new TargetCursor({
                 targetSelector: '.cursor-target', 
@@ -808,24 +855,22 @@
             });
         });
 
-        let buildStatus = 'idle'; // idle, building, complete, error
+        let buildStatus = 'idle';
         let apkFile = null;
         
-        // 添加日志
         function addLog(message, type = 'info') {
             const time = new Date().toLocaleTimeString();
+            const logContainer = document.getElementById('logContainer');
             const entry = document.createElement('div');
             entry.className = 'log-entry ' + type;
             entry.innerHTML = `<span class="log-time">${time}</span><span>${message}</span>`;
             logContainer.insertBefore(entry, logContainer.firstChild);
             
-            // 限制日志数量
             while (logContainer.children.length > 100) {
                 logContainer.removeChild(logContainer.lastChild);
             }
         }
         
-        // 更新步骤状态
         function updateStep(stepId, status) {
             const step = document.getElementById(stepId);
             if (status === 'current') {
@@ -839,21 +884,17 @@
             }
         }
         
-        // 更新进度
         function updateProgress(percent, text) {
             document.getElementById('progressFill').style.width = percent + '%';
             document.getElementById('progressText').textContent = text;
         }
         
-        // 选择目录
         async function selectDirectory() {
             try {
-                // 调用后端 API 获取可用目录列表
                 const response = await fetch('/api/apk/directories');
                 const data = await response.json();
                 
                 if (data.status === 'success') {
-                    // 显示目录选择对话框
                     const directories = data.directories || [];
                     const dirList = directories.map((dir, index) => 
                         `${index + 1}. ${dir}`
@@ -879,16 +920,13 @@
             }
         }
         
-        // 启用构建按钮
         function enableBuildButton() {
             const outputDir = document.getElementById('outputDir').value;
             document.getElementById('buildBtn').disabled = !outputDir;
         }
         
-        // 监听输入变化
         document.getElementById('outputDir').addEventListener('change', enableBuildButton);
         
-        // 开始构建
         async function startBuild() {
             const outputDir = document.getElementById('outputDir').value;
             if (!outputDir) {
@@ -901,7 +939,6 @@
             document.getElementById('progressContainer').style.display = 'block';
             document.getElementById('downloadSection').style.display = 'none';
             
-            // 更新步骤状态
             updateStep('step1', 'completed');
             updateStep('step2', 'completed');
             updateStep('step3', 'current');
@@ -926,14 +963,12 @@
                     buildStatus = 'complete';
                     apkFile = data.apk_file;
                     
-                    // 更新步骤状态
                     updateStep('step3', 'completed');
                     updateStep('step4', 'current');
                     
                     addLog(`APK 构建成功！文件：${data.apk_file}`, 'success');
                     updateProgress(100, '构建完成！');
                     
-                    // 显示下载部分
                     showDownloadSection(data);
                 } else {
                     buildStatus = 'error';
@@ -947,7 +982,6 @@
             }
         }
         
-        // 在 showDownloadSection 函数中，修改下载链接
         function showDownloadSection(data) {
             const downloadSection = document.getElementById('downloadSection');
             downloadSection.style.display = 'block';
@@ -957,21 +991,17 @@
             document.getElementById('apkCreateTime').textContent = new Date().toLocaleString();
             document.getElementById('apkFilePath').textContent = data.apk_file || '';
             
-            // 修复：使用文件名而不是完整路径
             const downloadLink = document.getElementById('downloadLink');
             downloadLink.href = '/api/apk/download?filename=' + encodeURIComponent(data.apk_filename);
             
-            // 滚动到下载部分
             downloadSection.scrollIntoView({ behavior: 'smooth' });
         }
         
-        // 下载 APK
         function downloadAPK() {
             if (!apkFile) return;
             addLog('开始下载 APK...', 'info');
         }
         
-        // 重置构建
         function resetBuild() {
             buildStatus = 'idle';
             apkFile = null;
@@ -982,11 +1012,9 @@
             document.getElementById('progressFill').style.width = '0%';
             document.getElementById('progressText').textContent = '准备中...';
             
-            // 重置步骤状态
             updateStep('step3', 'completed');
             updateStep('step4', '');
             
-            // 清空日志
             document.getElementById('logContainer').innerHTML = `
                 <div class="log-entry">
                     <span class="log-time">${new Date().toLocaleTimeString()}</span>
@@ -995,7 +1023,6 @@
             `;
         }
         
-        // 页面加载时检查状态
         document.addEventListener('DOMContentLoaded', function() {
             addLog('APK 打包工具已就绪', 'success');
         });

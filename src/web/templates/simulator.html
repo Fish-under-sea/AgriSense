@@ -13,9 +13,33 @@
             box-sizing: border-box;
         }
         
+        /* 视频背景全屏层 */
+        .video-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: -2;
+            pointer-events: none;
+        }
+        
+        /* 半透明遮罩层 */
+        .overlay-mask {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: -1;
+            pointer-events: none;
+        }
+        
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            background: #0a0a1a;
             color: #eee;
             min-height: 100vh;
             padding: 20px;
@@ -24,12 +48,17 @@
         .container {
             max-width: 1200px;
             margin: 0 auto;
+            position: relative;
+            z-index: 1;
         }
         
         header {
             text-align: center;
             padding: 20px 0;
             margin-bottom: 30px;
+            background: rgba(0,0,0,0.4);
+            border-radius: 20px;
+            backdrop-filter: blur(8px);
         }
         
         header h1 {
@@ -39,14 +68,15 @@
         }
         
         header p {
-            color: #888;
+            color: #ccc;
         }
         
         .nav-link {
             display: inline-block;
             margin-top: 15px;
+            margin-right: 12px;
             padding: 10px 25px;
-            background: #4ecca3;
+            background: rgba(78, 204, 163, 0.8);
             color: #1a1a2e;
             text-decoration: none;
             border-radius: 25px;
@@ -66,13 +96,14 @@
             gap: 20px;
             margin-bottom: 30px;
             padding: 20px;
-            background: rgba(255,255,255,0.05);
+            background: rgba(255,255,255,0.08);
             border-radius: 15px;
+            backdrop-filter: blur(8px);
         }
         
         .mode-toggle label {
             font-size: 1.1em;
-            color: #aaa;
+            color: #ddd;
         }
         
         .toggle-switch {
@@ -132,10 +163,11 @@
         }
         
         .panel {
-            background: rgba(255,255,255,0.05);
+            background: rgba(20, 25, 45, 0.88);
+            backdrop-filter: blur(10px);
             border-radius: 15px;
             padding: 25px;
-            border: 1px solid rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.15);
         }
         
         .panel h2 {
@@ -155,7 +187,7 @@
         .control-group label {
             display: block;
             margin-bottom: 8px;
-            color: #ccc;
+            color: #ddd;
             font-size: 0.95em;
         }
         
@@ -176,7 +208,7 @@
             -webkit-appearance: none;
             height: 8px;
             border-radius: 4px;
-            background: #333;
+            background: #444;
             outline: none;
         }
         
@@ -195,15 +227,6 @@
             transform: scale(1.2);
         }
         
-        .slider::-moz-range-thumb {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: #4ecca3;
-            cursor: pointer;
-            border: none;
-        }
-        
         .input-group {
             display: flex;
             gap: 10px;
@@ -213,9 +236,9 @@
         .input-group input {
             flex: 1;
             padding: 10px 15px;
-            border: 1px solid #444;
+            border: 1px solid rgba(255,255,255,0.2);
             border-radius: 8px;
-            background: #222;
+            background: rgba(0,0,0,0.5);
             color: #fff;
             font-size: 1em;
         }
@@ -256,7 +279,7 @@
         }
         
         .btn-secondary {
-            background: #555;
+            background: rgba(85, 85, 85, 0.8);
             color: #fff;
         }
         
@@ -278,6 +301,7 @@
             gap: 15px;
             margin-top: 20px;
             flex-wrap: wrap;
+            justify-content: center;
         }
         
         .status-indicator {
@@ -304,7 +328,7 @@
         }
         
         .data-preview {
-            background: #1a1a2e;
+            background: rgba(0, 0, 0, 0.5);
             border-radius: 10px;
             padding: 15px;
             margin-top: 15px;
@@ -312,17 +336,19 @@
             font-size: 0.85em;
             max-height: 200px;
             overflow-y: auto;
+            border: 1px solid rgba(255,255,255,0.1);
         }
         
         .data-preview pre {
             margin: 0;
             white-space: pre-wrap;
             word-wrap: break-word;
+            color: #ddd;
         }
         
         .refresh-info {
             text-align: center;
-            color: #666;
+            color: #aaa;
             font-size: 0.9em;
             margin-top: 20px;
         }
@@ -333,8 +359,7 @@
             margin-left: 5px;
         }
 
-        /* ================= 高级自旋包裹光标 (TargetCursor) 样式 ================= */
-        /* 仅在桌面端隐藏默认光标，保护移动端触摸体验 */
+        /* ================= 高级自旋包裹光标样式 ================= */
         @media (min-width: 769px) {
             * { cursor: none !important; }
         }
@@ -357,7 +382,6 @@
         .corner-br { top: 0; left: 0; border-bottom-width: 3px; border-right-width: 3px; }
         .corner-bl { top: 0; left: 0; border-bottom-width: 3px; border-left-width: 3px; }
 
-        /* 移动端彻底隐藏自定义光标 */
         @media (max-width: 768px) {
             .target-cursor-wrapper { display: none !important; }
         }
@@ -365,6 +389,14 @@
     </style>
 </head>
 <body>
+    <!-- 视频背景 -->
+    <video class="video-background" autoplay loop muted playsinline>
+        <source src="/static/Mario.mp4" type="video/mp4">
+        您的浏览器不支持视频背景。
+    </video>
+    <!-- 暗色遮罩 -->
+    <div class="overlay-mask"></div>
+    
     <div class="container">
         <header>
             <h1>🌱 AgriSense 模拟器控制</h1>
@@ -400,7 +432,7 @@
                         <input type="range" class="slider" id="tempSlider" 
                                min="0" max="50" value="25" step="0.5">
                     </div>
-                    <div class="input-group ">
+                    <div class="input-group">
                         <input type="number" id="tempInput" value="25" step="0.5" min="0" max="50">
                         <button class="cursor-target" onclick="setTemp()">设置</button>
                     </div>
@@ -513,7 +545,7 @@
         </div>
         
         <!-- 按钮组 -->
-        <div class="button-group" style="justify-content: center;">
+        <div class="button-group">
             <button class="btn btn-primary cursor-target" onclick="randomizeData()">🎲 随机化数据</button>
             <button class="btn btn-secondary cursor-target" onclick="resetToDefault()">🔄 恢复默认</button>
             <button class="btn btn-secondary cursor-target" onclick="refreshData()">🔄 刷新数据</button>
@@ -533,7 +565,7 @@
         </div>
     </div>
     
-    <!-- ================= 光标 DOM 结构 ================= -->
+    <!-- 光标 DOM 结构 -->
     <div class="target-cursor-wrapper">
         <div class="target-cursor-dot"></div>
         <div class="target-cursor-corner corner-tl"></div>
@@ -543,9 +575,7 @@
     </div>
 
     <script>
-        // =========================================================================
-        // Vanilla JS 版 TargetCursor (完美翻译自 React + GSAP 源码)
-        // =========================================================================
+        // TargetCursor 类 (与 mobile.html 相同，省略重复代码以节省篇幅)
         class TargetCursor {
             constructor(options = {}) {
                 this.targetSelector = options.targetSelector || '.cursor-target';
@@ -746,7 +776,6 @@
             }
         }
 
-        // 初始化目标光标挂载
         window.addEventListener('DOMContentLoaded', () => {
             new TargetCursor({
                 targetSelector: '.cursor-target', 
@@ -758,7 +787,6 @@
         let refreshTimer;
         const REFRESH_INTERVAL = 2000;
         
-        // 初始化
         document.addEventListener('DOMContentLoaded', function() {
             initSliders();
             loadSimulationConfig();
@@ -766,7 +794,6 @@
             checkSimulationMode();
         });
         
-        // 初始化滑块和输入框联动
         function initSliders() {
             const pairs = [
                 ['tempSlider', 'tempInput', 'tempValue'],
@@ -795,7 +822,6 @@
             });
         }
         
-        // 更新值显示
         function updateValueDisplay(elementId, value) {
             const element = document.getElementById(elementId);
             if (element) {
@@ -813,7 +839,6 @@
             }
         }
         
-        // 加载模拟配置
         async function loadSimulationConfig() {
             try {
                 const response = await fetch('/api/simulation/config');
@@ -848,7 +873,6 @@
             if (valueDisplay) valueDisplay.textContent = value + unit;
         }
         
-        // 设置函数
         async function setTemp() {
             await updateConfig('environment', 'temperature', parseFloat(document.getElementById('tempInput').value));
         }
@@ -871,7 +895,6 @@
             updateSoilAverage();
         }
         
-        // 更新配置
         async function updateConfig(category, key, value) {
             try {
                 await fetch('/api/simulation/config', {
@@ -886,7 +909,6 @@
             }
         }
         
-        // 更新土壤平均湿度
         function updateSoilAverage() {
             const soil0 = parseFloat(document.getElementById('soil0Input').value) || 0;
             const soil1 = parseFloat(document.getElementById('soil1Input').value) || 0;
@@ -895,7 +917,6 @@
             document.getElementById('soilAvgValue').textContent = avg + '%';
         }
         
-        // 随机化数据
         async function randomizeData() {
             try {
                 const response = await fetch('/api/simulation/randomize', { method: 'POST' });
@@ -910,7 +931,6 @@
             }
         }
         
-        // 恢复默认
         async function resetToDefault() {
             const defaults = {
                 environment: {
@@ -938,14 +958,12 @@
             showNotification('已恢复默认值');
         }
         
-        // 刷新数据
         async function refreshData() {
             await loadSimulationConfig();
             await updateDataPreview();
             showNotification('数据已刷新');
         }
         
-        // 切换模拟模式
         document.getElementById('simulationToggle').addEventListener('change', async function() {
             const enabled = this.checked;
             const label = document.getElementById('modeLabel');
@@ -970,7 +988,6 @@
             }
         });
         
-        // 检查模拟模式状态
         async function checkSimulationMode() {
             try {
                 const response = await fetch('/api/status');
@@ -985,7 +1002,6 @@
             }
         }
         
-        // 更新数据预览
         async function updateDataPreview() {
             try {
                 const response = await fetch('/api/sensors/all');
@@ -1000,7 +1016,6 @@
             }
         }
         
-        // 自动刷新
         function startAutoRefresh() {
             refreshData();
             refreshTimer = setInterval(() => {
@@ -1008,12 +1023,8 @@
             }, REFRESH_INTERVAL);
         }
         
-        // 通知
         function showNotification(message, type = 'success') {
-            // 简单的控制台通知
             console.log(`[${type.toUpperCase()}] ${message}`);
-            
-            // 可以在这里添加更复杂的通知 UI
         }
     </script>
 </body>
