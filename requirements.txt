@@ -16,8 +16,8 @@ tensorflow>=2.13.0
 scikit-learn>=1.3.0
 
 # 传感器/硬件 (Raspberry Pi)
-RPi.GPIO>=0.7.0
-smbus2>=0.4.0
+# RPi.GPIO>=0.7.0
+# smbus2>=0.4.0
 
 # LLM 相关
 openai>=1.0.0

@@ -45,31 +45,58 @@
             width: 100%;
             height: 100%;
             z-index: -1;
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.3);
         }
         
-        /* 顶部控制栏 */
-        .top-control-bar {
+        /* 左上角刷新按钮 - 固定在视口左上角 */
+        .top-left-refresh {
             position: fixed;
             top: 20px;
             left: 20px;
-            right: 20px;
-            height: 60px;
             z-index: 1000;
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            gap: 15px;
+            pointer-events: auto;
+        }
+        
+        /* 右上角毛玻璃控制 - 固定在视口右上角 */
+        .top-right-glass {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            pointer-events: auto;
+        }
+        
+        /* 模拟器卡片内的控制区域 */
+        .simulator-controls {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        .simulator-controls h4 {
+            color: #666;
+            font-size: 0.9em;
+            margin: 0;
         }
         
         /* 毛玻璃控制切换器 */
         .glass-control-panel {
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(30px) saturate(180%);
+            -webkit-backdrop-filter: blur(30px) saturate(180%);
             border-radius: 15px;
             padding: 10px 20px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
             transition: all 0.3s ease;
             display: flex;
             align-items: center;
@@ -183,20 +210,111 @@
         }
         
         .card {
-            background: rgba(255, 255, 255, 0.25);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            background: rgba(255, 255, 255, 0.35);
+            backdrop-filter: blur(40px) saturate(200%);
+            -webkit-backdrop-filter: blur(40px) saturate(200%);
             border-radius: 15px;
             padding: 20px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.4);
             transition: all 0.3s ease;
         }
         
         .card:hover {
-            background: rgba(255, 255, 255, 0.35);
+            background: rgba(255, 255, 255, 0.45);
             box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
             transform: translateY(-5px);
+        }
+        
+        /* 粉末粒子容器 */
+        .particle-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1500;
+        }
+        
+        /* 粉末粒子 */
+        .particle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            pointer-events: none;
+            transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        
+        /* 爆炸动画 */
+        @keyframes explode {
+            0% {
+                transform: translate(0, 0) rotate(0deg) scale(1);
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.8;
+            }
+            100% {
+                transform: translate(var(--tx), var(--ty)) rotate(var(--rotate)) scale(0.3);
+                opacity: 0;
+            }
+        }
+        
+        @keyframes restore {
+            0% {
+                transform: translate(var(--tx), var(--ty)) rotate(var(--rotate)) scale(0.3);
+                opacity: 0;
+            }
+            50% {
+                opacity: 0.5;
+            }
+            100% {
+                transform: translate(0, 0) rotate(0deg) scale(1);
+                opacity: 1;
+            }
+        }
+        
+        .card.exploding {
+            animation: explode 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+        
+        .card.restoring {
+            animation: restore 0.6s cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards;
+        }
+        
+        /* 爆炸按钮 */
+        .explode-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            cursor: pointer;
+            z-index: 2000;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.5);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+        }
+        
+        .explode-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 30px rgba(102, 126, 234, 0.7);
+        }
+        
+        .explode-btn.active {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+        }
+        
+        .explode-btn.active:hover {
+            box-shadow: 0 6px 30px rgba(231, 76, 60, 0.7);
         }
         
         .card h2 {
@@ -581,13 +699,15 @@
         input:checked + .toggle-slider:before {
             transform: translateX(24px);
         }
+        
     </style>
 </head>
 <body>
     <!-- 视频背景 -->
     <div class="video-background">
         <video autoplay muted loop playsinline>
-            <source src="/static/Mario.mp4" type="video/mp4">
+            <!-- <source src="/static/Mario.mp4" type="video/mp4"> -->
+            <source src="/static/archive.mp4" type="video/mp4">
             您的浏览器不支持视频播放。
         </video>
     </div>
@@ -595,30 +715,30 @@
     <!-- 深色遮罩层 -->
     <div class="dark-overlay"></div>
     
-        <!-- 顶部控制栏 -->
-        <div class="top-control-bar">
-        <!-- 左侧：刷新按钮 -->
-        <div style="display: flex; align-items: center; gap: 15px;">
-            <button class="refresh-btn" onclick="refreshAll()">🔄 刷新数据</button>
-            <span class="last-update">上次更新：<span id="lastUpdate">--</span></span>
-        </div>
-        
-        <!-- 右侧：毛玻璃控制 -->
-        <div style="display: flex; align-items: center; gap: 15px;">
-            <!-- 毛玻璃效果控制 -->
-            <div class="glass-control-panel">
-                <h3>🔮 毛玻璃</h3>
-                <div class="glass-toggle-container">
-                    <span class="glass-toggle-label">效果</span>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="glassToggle" checked onchange="toggleGlassEffect()">
-                        <span class="toggle-slider"></span>
-                    </label>
-                    <span id="glassStatus" class="glass-status">开启</span>
-                </div>
+    <!-- 左上角：刷新按钮 -->
+    <div class="top-left-refresh">
+        <button class="refresh-btn" onclick="refreshAll()">🔄 刷新数据</button>
+        <span class="last-update">上次更新：<span id="lastUpdate">--</span></span>
+    </div>
+    
+    <!-- 右上角：毛玻璃控制 -->
+    <div class="top-right-glass">
+        <!-- 毛玻璃效果控制 -->
+        <div class="glass-control-panel">
+            <h3>🔮 毛玻璃</h3>
+            <div class="glass-toggle-container">
+                <span class="glass-toggle-label">效果</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="glassToggle" checked onchange="toggleGlassEffect()">
+                    <span class="toggle-slider"></span>
+                </label>
+                <span id="glassStatus" class="glass-status">开启</span>
             </div>
         </div>
     </div>
+    
+    <!-- 爆炸按钮 -->
+    <button class="explode-btn" id="explodeBtn" onclick="toggleExplode()" title="点击炸开/恢复组件">💥</button>
     
     <div class="container">
         <header>
@@ -708,12 +828,47 @@
             <!-- 作物健康卡片 -->
             <div class="card">
                 <h2>🍃 作物健康</h2>
-                <div class="health-score good" id="healthScore">
-                    --
+                
+                <!-- 图像上传区域 -->
+                <div style="margin-bottom: 15px;">
+                    <div class="image-preview" id="imagePreview" style="height: 150px;">
+                        <span id="imagePreviewText">📷 点击上传或拍照</span>
+                        <img id="uploadedImage" style="display: none; max-width: 100%; max-height: 100%; border-radius: 8px;" />
+                    </div>
+                    <input type="file" id="imageUpload" accept="image/*" style="display: none;" onchange="handleImageUpload(event)" />
+                    <button class="refresh-btn" onclick="document.getElementById('imageUpload').click()" style="width: 100%; margin-bottom: 5px;">
+                        📤 上传图像
+                    </button>
+                    <button class="refresh-btn" onclick="takeSnapshotAndAnalyze()" style="width: 100%; background: rgba(78, 204, 163, 0.8); box-shadow: 0 4px 15px rgba(78, 204, 163, 0.4);">
+                        📸 拍照分析
+                    </button>
                 </div>
-                <p style="text-align: center; color: #666;" id="diseaseType">病害类型：--</p>
-                <div id="healthRecommendations" style="margin-top: 15px;">
-                    <p style="color: #999;">点击刷新获取分析</p>
+                
+                <!-- CNN 分析结果 -->
+                <div id="cnnAnalysisResult" style="display: none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <span style="color: #666; font-size: 0.9em;">置信度</span>
+                        <span id="cnnConfidence" style="font-weight: bold; color: #4ecca3;">--</span>
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <div style="height: 8px; background: #e0e0e0; border-radius: 4px; overflow: hidden;">
+                            <div id="cnnConfidenceBar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #e74c3c, #f39c12, #28a745); transition: width 0.5s;"></div>
+                        </div>
+                    </div>
+                    <div class="health-score good" id="healthScore">
+                        --
+                    </div>
+                    <p style="text-align: center; color: #666;" id="diseaseType">病害类型：--</p>
+                    <div id="classProbabilities" style="margin-top: 10px; max-height: 100px; overflow-y: auto;">
+                    </div>
+                </div>
+                
+                <!-- 传统分析结果 -->
+                <div id="traditionalAnalysis" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(0,0,0,0.1);">
+                    <h3 style="font-size: 1em; color: #666; margin-bottom: 10px;">🔍 传统分析方法</h3>
+                    <div id="healthRecommendations">
+                        <p style="color: #999;">点击刷新获取分析</p>
+                    </div>
                 </div>
             </div>
             
@@ -745,26 +900,26 @@
                 </div>
             </div>
             
-            <!-- 模拟器入口卡片 -->
-            <div class="card">
+            <!-- 模拟器卡片 -->
+            <div class="card simulator-card">
                 <h2>🖥️ 模拟器</h2>
                 <p style="color: #666; margin-bottom: 15px;">进入模拟器控制面板，自定义模拟数据参数。</p>
                 
-                <!-- 模拟模式切换 -->
-                <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255, 255, 255, 0.5); padding: 12px; border-radius: 8px; margin-bottom: 15px;">
-                    <span style="color: #666; font-size: 0.9em;">模拟模式</span>
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="simulationToggle" checked onchange="toggleSimulationMode()">
-                            <span class="toggle-slider"></span>
-                        </label>
-                        <span id="modeLabel" style="color: #4ecca3; font-weight: bold; font-size: 0.85em;">已启用</span>
-                    </div>
-                </div>
-                
-                <button class="refresh-btn" onclick="window.location.href='/simulator'" style="width: 100%; text-align: center;">
+                <button class="refresh-btn" onclick="window.location.href='/simulator'" style="width: 100%; text-align: center; margin-bottom: 15px;">
                     🎮 打开模拟器控制
                 </button>
+                
+                <!-- 模拟模式控制 -->
+                <div class="simulator-controls">
+                    <div>
+                        <h4>🎮 模拟模式</h4>
+                        <span id="modeLabel" class="simulation-status" style="font-size: 0.85em;">已启用</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="simulationToggle" checked onchange="toggleSimulationMode()">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
             </div>
             
             <!-- AI 咨询卡片 -->
@@ -1022,13 +1177,15 @@
             
             cards.forEach(card => {
                 if (enabled) {
-                    card.style.background = 'rgba(255, 255, 255, 0.25)';
-                    card.style.backdropFilter = 'blur(20px)';
-                    card.style.webkitBackdropFilter = 'blur(20px)';
+                    card.style.background = 'rgba(255, 255, 255, 0.35)';
+                    card.style.backdropFilter = 'blur(40px) saturate(200%)';
+                    card.style.webkitBackdropFilter = 'blur(40px) saturate(200%)';
+                    card.style.border = '1px solid rgba(255, 255, 255, 0.4)';
                 } else {
                     card.style.background = 'rgba(255, 255, 255, 0.95)';
                     card.style.backdropFilter = 'none';
                     card.style.webkitBackdropFilter = 'none';
+                    card.style.border = '1px solid rgba(0, 0, 0, 0.1)';
                 }
             });
             
@@ -1036,13 +1193,426 @@
             status.className = enabled ? 'glass-status' : 'glass-status disabled';
         }
         
+        // 粉末粒子系统
+        let particleContainer = null;
+        let isExploded = false;
+        
+        // 创建粒子容器
+        function createParticleContainer() {
+            if (!particleContainer) {
+                particleContainer = document.createElement('div');
+                particleContainer.className = 'particle-container';
+                document.body.appendChild(particleContainer);
+            }
+            return particleContainer;
+        }
+        
+        // 从卡片创建粉末粒子
+        function createParticlesFromCard(card) {
+            const rect = card.getBoundingClientRect();
+            const particles = [];
+            const particleCount = 40; // 每个卡片的粒子数量
+            const colors = ['#667eea', '#764ba2', '#4ecca3', '#e74c3c', '#f39c12', '#3498db'];
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                
+                // 随机大小
+                const size = 4 + Math.random() * 8;
+                particle.style.width = size + 'px';
+                particle.style.height = size + 'px';
+                
+                // 随机颜色
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                particle.style.background = color;
+                
+                // 随机位置（在卡片范围内）
+                const x = rect.left + Math.random() * rect.width;
+                const y = rect.top + Math.random() * rect.height;
+                particle.style.left = x + 'px';
+                particle.style.top = y + 'px';
+                
+                // 计算爆炸方向
+                const centerX = window.innerWidth / 2;
+                const centerY = window.innerHeight / 2;
+                const angle = Math.atan2(y - centerY, x - centerX) + (Math.random() - 0.5);
+                const distance = 150 + Math.random() * 200;
+                const tx = Math.cos(angle) * distance;
+                const ty = Math.sin(angle) * distance;
+                const rotate = (Math.random() - 0.5) * 720;
+                
+                document.body.appendChild(particle);
+                particles.push({ element: particle, tx, ty, rotate, x, y });
+            }
+            
+            return particles;
+        }
+        
+        // 爆炸效果
+        function explodeParticles(particles) {
+            particles.forEach(p => {
+                setTimeout(() => {
+                    p.element.style.transform = `translate(${p.tx}px, ${p.ty}px) rotate(${p.rotate}deg) scale(0)`;
+                    p.element.style.opacity = '0';
+                }, 10);
+            });
+        }
+        
+        // 恢复粒子
+        function restoreParticles(particles, targetPositions) {
+            particles.forEach((p, index) => {
+                const target = targetPositions[index];
+                if (target) {
+                    p.element.style.transition = 'all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)';
+                    p.element.style.left = target.x + 'px';
+                    p.element.style.top = target.y + 'px';
+                    p.element.style.transform = 'translate(0, 0) rotate(0deg) scale(1)';
+                    p.element.style.opacity = '1';
+                }
+            });
+        }
+        
+        // 清理粒子
+        function cleanupParticles(particles) {
+            particles.forEach(p => {
+                if (p.element.parentNode) {
+                    p.element.parentNode.removeChild(p.element);
+                }
+            });
+        }
+        
+        // 爆炸/恢复效果
+        function toggleExplode() {
+            const btn = document.getElementById('explodeBtn');
+            const cards = document.querySelectorAll('.card');
+            const header = document.querySelector('header');
+            const topLeftRefresh = document.querySelector('.top-left-refresh');
+            const topRightGlass = document.querySelector('.top-right-glass');
+            
+            isExploded = !isExploded;
+            
+            if (isExploded) {
+                btn.classList.add('active');
+                btn.textContent = '🔄';
+                
+                // 创建粒子容器
+                createParticleContainer();
+                
+                // 为每个卡片创建粒子
+                let allParticles = [];
+                cards.forEach((card, index) => {
+                    const particles = createParticlesFromCard(card);
+                    allParticles = allParticles.concat(particles);
+                });
+                
+                // 隐藏卡片
+                cards.forEach(card => {
+                    card.style.opacity = '0';
+                    card.style.transform = 'scale(0.8)';
+                });
+                
+                // 隐藏 header 和控制按钮
+                header.style.transition = 'opacity 0.5s';
+                header.style.opacity = '0';
+                topLeftRefresh.style.transition = 'opacity 0.5s';
+                topLeftRefresh.style.opacity = '0';
+                topRightGlass.style.transition = 'opacity 0.5s';
+                topRightGlass.style.opacity = '0';
+                
+                // 延迟后爆炸粒子
+                setTimeout(() => {
+                    explodeParticles(allParticles);
+                }, 100);
+                
+                // 存储粒子引用以便恢复
+                btn._particles = allParticles;
+                
+            } else {
+                btn.classList.remove('active');
+                btn.textContent = '💥';
+                
+                const particles = btn._particles || [];
+                
+                // 恢复卡片
+                cards.forEach(card => {
+                    card.style.opacity = '1';
+                    card.style.transform = 'scale(1)';
+                });
+                
+                // 显示 header 和控制按钮
+                header.style.transition = 'opacity 0.5s';
+                header.style.opacity = '1';
+                topLeftRefresh.style.transition = 'opacity 0.5s';
+                topLeftRefresh.style.opacity = '1';
+                topRightGlass.style.transition = 'opacity 0.5s';
+                topRightGlass.style.opacity = '1';
+                
+                // 计算粒子应该返回的目标位置
+                const targetPositions = [];
+                cards.forEach(card => {
+                    const rect = card.getBoundingClientRect();
+                    const particleCount = 40;
+                    for (let i = 0; i < particleCount; i++) {
+                        targetPositions.push({
+                            x: rect.left + Math.random() * rect.width,
+                            y: rect.top + Math.random() * rect.height
+                        });
+                    }
+                });
+                
+                // 恢复粒子
+                restoreParticles(particles, targetPositions);
+                
+                // 动画结束后清理
+                setTimeout(() => {
+                    cleanupParticles(particles);
+                    btn._particles = [];
+                }, 1000);
+            }
+        }
+        
         // 页面加载时刷新数据
         refreshAll();
         checkSimulationMode();
         loadAIModels();
+        loadCropHealthClasses();
         
         // 每 10 秒自动刷新
         setInterval(refreshSensors, 10000);
+        
+        // ========== 作物健康分析 ==========
+        
+        // 处理图像上传
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.getElementById('uploadedImage');
+                const previewText = document.getElementById('imagePreviewText');
+                img.src = e.target.result;
+                img.style.display = 'block';
+                previewText.style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+            
+            // 上传并分析
+            analyzeUploadedImage(file);
+        }
+        
+        // 上传图像并分析
+        async function analyzeUploadedImage(file) {
+            const formData = new FormData();
+            formData.append('image', file);
+            
+            try {
+                const response = await fetch('/api/vision/crop-health/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                displayCNNAnalysisResult(data);
+            } catch (error) {
+                console.error('分析图像失败:', error);
+                alert('分析图像时发生错误');
+            }
+        }
+        
+        // 拍照并分析
+        async function takeSnapshotAndAnalyze() {
+            try {
+                // 先拍照
+                const snapshotResponse = await fetch('/api/snapshot', { method: 'POST' });
+                const snapshotData = await snapshotResponse.json();
+                
+                // 检查是否是模拟模式
+                if (snapshotData.mode === 'simulation' || snapshotData.suggest_upload) {
+                    // 模拟模式下，提示用户上传照片
+                    alert('模拟模式下无法拍照，请上传本地图片进行分析');
+                    // 自动触发文件上传对话框
+                    document.getElementById('imageUpload').click();
+                    return;
+                }
+                
+                if (snapshotData.success) {
+                    // 拍照成功后，显示照片预览
+                    const img = document.getElementById('uploadedImage');
+                    const previewText = document.getElementById('imagePreviewText');
+                    img.src = snapshotData.url || '/api/snapshots/' + snapshotData.filename;
+                    img.style.display = 'block';
+                    previewText.style.display = 'none';
+                    
+                    // 然后获取 CNN 分析结果
+                    const analysisResponse = await fetch('/api/vision/crop-health');
+                    const analysisData = await analysisResponse.json();
+                    
+                    displayCNNAnalysisResult(analysisData);
+                } else {
+                    alert('拍照失败：' + (snapshotData.error || '未知错误'));
+                }
+            } catch (error) {
+                console.error('拍照分析失败:', error);
+                alert('拍照分析时发生错误');
+            }
+        }
+        
+        // 显示 CNN 分析结果
+        function displayCNNAnalysisResult(data) {
+            const resultContainer = document.getElementById('cnnAnalysisResult');
+            const healthScore = document.getElementById('healthScore');
+            const diseaseType = document.getElementById('diseaseType');
+            const confidence = document.getElementById('cnnConfidence');
+            const confidenceBar = document.getElementById('cnnConfidenceBar');
+            const classProbabilities = document.getElementById('classProbabilities');
+            
+            if (data.error) {
+                alert('分析失败：' + data.error);
+                return;
+            }
+            
+            // 显示结果容器
+            resultContainer.style.display = 'block';
+            
+            // 设置置信度
+            const confidencePercent = (data.confidence * 100).toFixed(1);
+            confidence.textContent = confidencePercent + '%';
+            confidenceBar.style.width = confidencePercent + '%';
+            
+            // 设置健康分数和病害类型
+            const healthPercent = data.health_score * 100;
+            healthScore.textContent = healthPercent.toFixed(0);
+            healthScore.className = 'health-score ' + getHealthClass(data.health_score);
+            
+            // 使用 disease_type 字段（后端返回的字段名）
+            // 如果 disease_type 是病害代码，使用 getClassName 转换为中文
+            let diseaseDisplay = '未知';
+            if (data.disease_type) {
+                diseaseDisplay = getClassName(data.disease_type);
+            } else if (data.prediction) {
+                diseaseDisplay = getClassName(data.prediction);
+            }
+            diseaseType.textContent = '病害类型：' + diseaseDisplay;
+            
+            // 显示各类别概率（后端返回的字段是 all_predictions）
+            const probabilities = data.class_probabilities || data.all_predictions;
+            if (probabilities && Object.keys(probabilities).length > 0) {
+                const sortedClasses = Object.entries(probabilities)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 5);
+                
+                classProbabilities.innerHTML = sortedClasses.map(([cls, prob]) => `
+                    <div style="display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid rgba(0,0,0,0.1);">
+                        <span style="color: #666; font-size: 0.85em;">${getClassName(cls)}</span>
+                        <span style="color: #4ecca3; font-weight: bold;">${(prob * 100).toFixed(1)}%</span>
+                    </div>
+                `).join('');
+            }
+            
+            // 显示推荐措施（后端返回的是 recommendation 单数字段）
+            if (data.recommendation) {
+                const healthRecContainer = document.getElementById('healthRecommendations');
+                healthRecContainer.innerHTML = `<div class="recommendation">${data.recommendation}</div>`;
+            }
+            // 也支持 recommendations 数组格式（兼容旧代码）
+            if (data.recommendations && data.recommendations.length > 0) {
+                const healthRecContainer = document.getElementById('healthRecommendations');
+                healthRecContainer.innerHTML = data.recommendations.map(r => 
+                    `<div class="recommendation">${r}</div>`
+                ).join('');
+            }
+        }
+        
+        // 获取健康分数对应的 CSS 类
+        function getHealthClass(score) {
+            if (score >= 0.7) return 'good';
+            if (score >= 0.4) return 'warning';
+            return 'danger';
+        }
+        
+        // 获取类别中文名称（与后端 CNN 作物分析器对应）
+        function getClassName(className) {
+            const nameMap = {
+                // 完整类别名称（与数据集完全对应）
+                'Tomato___healthy': '健康',
+                'Tomato___Bacterial_spot': '细菌性斑点病',
+                'Tomato___Early_blight': '早疫病',
+                'Tomato___Late_blight': '晚疫病',
+                'Tomato___Leaf_Mold': '叶霉病',
+                'Tomato___Septoria_leaf_spot': 'Septoria 叶斑病',
+                'Tomato___Spider_mites Two-spotted_spider_mite': '红蜘蛛虫害',
+                'Tomato___Target_Spot': '靶斑病',
+                'Tomato___Tomato_mosaic_virus': '花叶病毒病',
+                'Tomato___Tomato_Yellow_Leaf_Curl_Virus': '黄曲叶病毒病',
+                // 简化名称（兼容旧格式）
+                'healthy': '健康',
+                'early_blight': '早疫病',
+                'late_blight': '晚疫病',
+                'septoria_leaf_spot': 'Septoria 叶斑病',
+                'target_spot': '靶斑病',
+                'mosaic_virus': '花叶病毒病',
+                'leaf_mold': '叶霉病',
+                'bacterial_spot': '细菌性斑点病',
+                'spider_mites': '红蜘蛛虫害',
+                'yellow_leaf_curl': '黄曲叶病毒病'
+            };
+            // 先尝试精确匹配，如果没有则尝试部分匹配
+            if (nameMap[className]) {
+                return nameMap[className];
+            }
+            // 部分匹配：检查类别名称是否包含关键词
+            for (const [key, value] of Object.entries(nameMap)) {
+                if (className.toLowerCase().includes(key.toLowerCase())) {
+                    return value;
+                }
+            }
+            return className;
+        }
+        
+        // 加载 CNN 可识别的病害类别
+        async function loadCropHealthClasses() {
+            try {
+                const response = await fetch('/api/vision/crop-health/classes');
+                const data = await response.json();
+                
+                if (data.classes) {
+                    console.log('CNN 可识别的病害类别:', data.classes);
+                }
+            } catch (error) {
+                console.error('加载病害类别失败:', error);
+            }
+        }
+        
+        // 刷新作物健康数据
+        async function refreshCropHealth() {
+            try {
+                // 获取传统分析方法结果
+                const traditionalResponse = await fetch('/api/vision/leaf');
+                const traditionalData = await traditionalResponse.json();
+                
+                if (traditionalData.health_score !== undefined) {
+                    const healthScore = traditionalData.health_score * 100;
+                    const healthScoreEl = document.getElementById('healthScore');
+                    healthScoreEl.textContent = healthScore.toFixed(0);
+                    healthScoreEl.className = 'health-score ' + getHealthClass(traditionalData.health_score);
+                }
+                
+                if (traditionalData.disease_type) {
+                    document.getElementById('diseaseType').textContent = '病害类型：' + traditionalData.disease_type;
+                }
+                
+                if (traditionalData.recommendations && traditionalData.recommendations.length > 0) {
+                    const healthRecContainer = document.getElementById('healthRecommendations');
+                    healthRecContainer.innerHTML = traditionalData.recommendations.map(r => 
+                        `<div class="recommendation">${r}</div>`
+                    ).join('');
+                }
+            } catch (error) {
+                console.error('刷新作物健康数据失败:', error);
+            }
+        }
         
         // ========== AI 模型管理 ==========
         

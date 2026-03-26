@@ -1,0 +1,2 @@
+# 设置Python文件保持LF格式
+*.py text eol=lf

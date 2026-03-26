@@ -27,6 +27,7 @@ from sensors.soil_moisture import SoilMoistureSensor
 from sensors.camera import CameraSensor as Camera
 from vision.leaf_disease import LeafDiseaseAnalyzer
 from vision.growth_measure import GrowthAnalyzer as GrowthMeasure
+from vision.cnn_crop_analyzer import CNNCropAnalyzer
 from decision.rules_engine import RulesEngine
 from decision.llm_advisor import LLMAdvisor
 from control.actuator import ActuatorController
@@ -42,6 +43,7 @@ soil_sensor = None
 camera = None
 leaf_analyzer = None
 growth_measure = None
+cnn_crop_analyzer = None
 rules_engine = None
 llm_advisor = None
 actuator = None
@@ -104,8 +106,8 @@ def load_config():
 def initialize_modules(simulation: bool = True):
     """初始化所有模块"""
     global environment_sensor, soil_sensor, camera
-    global leaf_analyzer, growth_measure, rules_engine
-    global llm_advisor, actuator
+    global leaf_analyzer, growth_measure, cnn_crop_analyzer
+    global rules_engine, llm_advisor, actuator
     
     # 加载配置
     config = load_config()
@@ -125,6 +127,7 @@ def initialize_modules(simulation: bool = True):
     # 初始化视觉分析
     leaf_analyzer = LeafDiseaseAnalyzer(use_simulation=simulation)
     growth_measure = GrowthMeasure(use_simulation=simulation)
+    cnn_crop_analyzer = CNNCropAnalyzer(use_simulation=simulation)
     
     # 初始化决策模块
     rules_engine = RulesEngine()
@@ -539,19 +542,204 @@ def update_rules_config():
     return jsonify({'error': '缺少参数'}), 400
 
 
+# 照片存储配置
+MAX_SNAPSHOT_COUNT = 10
+SNAPSHOT_DIR = os.path.join(os.getcwd(), 'captures', 'snapshots')
+
+# 确保照片目录存在
+os.makedirs(SNAPSHOT_DIR, exist_ok=True)
+
+
+def cleanup_old_snapshots():
+    """清理旧照片，只保留最新的 MAX_SNAPSHOT_COUNT 张"""
+    try:
+        if not os.path.exists(SNAPSHOT_DIR):
+            return
+        
+        # 获取所有照片文件
+        snapshots = []
+        for f in os.listdir(SNAPSHOT_DIR):
+            if f.endswith('.jpg') or f.endswith('.png'):
+                filepath = os.path.join(SNAPSHOT_DIR, f)
+                mtime = os.path.getmtime(filepath)
+                snapshots.append((filepath, mtime))
+        
+        # 按修改时间排序（最新的在前）
+        snapshots.sort(key=lambda x: x[1], reverse=True)
+        
+        # 删除多余的照片
+        if len(snapshots) > MAX_SNAPSHOT_COUNT:
+            for filepath, _ in snapshots[MAX_SNAPSHOT_COUNT:]:
+                try:
+                    os.remove(filepath)
+                    logger.info(f"删除旧照片：{filepath}")
+                except Exception as e:
+                    logger.warning(f"删除照片失败 {filepath}: {e}")
+    except Exception as e:
+        logger.error(f"清理照片失败：{e}")
+
+
 @app.route('/api/snapshot', methods=['POST'])
 def take_snapshot():
-    """拍照"""
+    """
+    拍照接口
+    - 模拟模式：返回错误，提示用户上传照片
+    - 硬件模式：调用摄像头拍摄并保存
+    """
     if not camera:
         return jsonify({'error': '相机未初始化'}), 500
     
-    filename = f"snapshot_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
-    camera.capture(filename)
+    # 如果是模拟模式，返回错误提示用户上传
+    if system_status.get('simulation_enabled', True):
+        return jsonify({
+            'error': '模拟模式下无法拍照，请上传本地图片进行分析',
+            'mode': 'simulation',
+            'suggest_upload': True
+        }), 400
     
-    return jsonify({
-        'filename': filename,
-        'path': os.path.join('..', filename)
-    })
+    # 硬件模式：调用摄像头拍摄
+    try:
+        filename = f"snapshot_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
+        filepath = os.path.join(SNAPSHOT_DIR, filename)
+        
+        # 确保目录存在
+        os.makedirs(SNAPSHOT_DIR, exist_ok=True)
+        
+        # 调用摄像头拍摄并保存
+        image = camera.capture(save=False, prefix='snapshot')
+        if image is None:
+            return jsonify({'error': '摄像头捕获失败'}), 500
+        
+        # 保存图像
+        import cv2
+        image_bgr = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+        cv2.imwrite(filepath, image_bgr)
+        
+        # 清理旧照片
+        cleanup_old_snapshots()
+        
+        logger.info(f"照片已保存：{filepath}")
+        
+        return jsonify({
+            'filename': filename,
+            'path': filepath,
+            'mode': 'hardware',
+            'success': True
+        })
+    except Exception as e:
+        logger.error(f"拍照失败：{e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/snapshot/upload', methods=['POST'])
+def upload_snapshot():
+    """
+    上传照片进行分析（模拟模式使用）
+    """
+    if 'image' not in request.files:
+        return jsonify({'error': '未找到图像文件'}), 400
+    
+    file = request.files['image']
+    if file.filename == '':
+        return jsonify({'error': '文件名为空'}), 400
+    
+    try:
+        # 保存上传的照片
+        import uuid
+        filename = f"{uuid.uuid4().hex}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
+        filepath = os.path.join(SNAPSHOT_DIR, filename)
+        
+        # 确保目录存在
+        os.makedirs(SNAPSHOT_DIR, exist_ok=True)
+        
+        file.save(filepath)
+        
+        # 清理旧照片
+        cleanup_old_snapshots()
+        
+        logger.info(f"照片已上传：{filepath}")
+        
+        return jsonify({
+            'filename': filename,
+            'path': filepath,
+            'mode': 'simulation',
+            'success': True
+        })
+    except Exception as e:
+        logger.error(f"上传照片失败：{e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/snapshots/list', methods=['GET'])
+def list_snapshots():
+    """获取所有已保存的照片列表"""
+    try:
+        snapshots = []
+        if os.path.exists(SNAPSHOT_DIR):
+            for f in os.listdir(SNAPSHOT_DIR):
+                if f.endswith('.jpg') or f.endswith('.png'):
+                    filepath = os.path.join(SNAPSHOT_DIR, f)
+                    mtime = os.path.getmtime(filepath)
+                    snapshots.append({
+                        'filename': f,
+                        'path': filepath,
+                        'url': f'/api/snapshots/{f}',
+                        'timestamp': datetime.fromtimestamp(mtime).isoformat()
+                    })
+        
+        # 按时间排序（最新的在前）
+        snapshots.sort(key=lambda x: x['timestamp'], reverse=True)
+        
+        return jsonify({
+            'snapshots': snapshots,
+            'count': len(snapshots),
+            'max_count': MAX_SNAPSHOT_COUNT
+        })
+    except Exception as e:
+        logger.error(f"获取照片列表失败：{e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/snapshots/<filename>', methods=['GET'])
+def get_snapshot(filename):
+    """获取单张照片"""
+    filepath = os.path.join(SNAPSHOT_DIR, filename)
+    if not os.path.exists(filepath):
+        return jsonify({'error': '文件不存在'}), 404
+    
+    from flask import send_file
+    return send_file(filepath, mimetype='image/jpeg')
+
+
+@app.route('/api/snapshots/<filename>', methods=['DELETE'])
+def delete_snapshot(filename):
+    """删除单张照片"""
+    filepath = os.path.join(SNAPSHOT_DIR, filename)
+    if not os.path.exists(filepath):
+        return jsonify({'error': '文件不存在'}), 404
+    
+    try:
+        os.remove(filepath)
+        logger.info(f"照片已删除：{filepath}")
+        return jsonify({'success': True, 'filename': filename})
+    except Exception as e:
+        logger.error(f"删除照片失败：{e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/snapshots/clear', methods=['POST'])
+def clear_snapshots():
+    """清空所有照片"""
+    try:
+        if os.path.exists(SNAPSHOT_DIR):
+            for f in os.listdir(SNAPSHOT_DIR):
+                if f.endswith('.jpg') or f.endswith('.png'):
+                    filepath = os.path.join(SNAPSHOT_DIR, f)
+                    os.remove(filepath)
+        return jsonify({'success': True, 'message': '所有照片已清空'})
+    except Exception as e:
+        logger.error(f"清空照片失败：{e}")
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/api/health')
@@ -565,10 +753,87 @@ def health_check():
             'camera': camera is not None,
             'leaf_analyzer': leaf_analyzer is not None,
             'growth_measure': growth_measure is not None,
+            'cnn_crop_analyzer': cnn_crop_analyzer is not None,
             'rules_engine': rules_engine is not None,
             'llm_advisor': llm_advisor is not None,
             'actuator': actuator is not None
         }
+    })
+
+
+@app.route('/api/vision/crop-health')
+def get_crop_health():
+    """获取作物健康分析（基于 CNN）"""
+    if not cnn_crop_analyzer:
+        return jsonify({'error': 'CNN 作物分析器未初始化'}), 500
+    
+    # 使用模拟摄像头图像
+    result = cnn_crop_analyzer.analyze(None)
+    return jsonify(result)
+
+
+@app.route('/api/vision/crop-health/upload', methods=['POST'])
+def upload_crop_health_image():
+    """上传图像进行作物健康分析"""
+    if not cnn_crop_analyzer:
+        return jsonify({'error': 'CNN 作物分析器未初始化'}), 500
+    
+    if 'image' not in request.files:
+        return jsonify({'error': '未找到图像文件'}), 400
+    
+    file = request.files['image']
+    if file.filename == '':
+        return jsonify({'error': '文件名为空'}), 400
+    
+    try:
+        # 保存上传的图像到临时目录
+        import uuid
+        temp_dir = os.path.join(os.getcwd(), 'captures', 'temp')
+        os.makedirs(temp_dir, exist_ok=True)
+        
+        # 使用唯一文件名
+        unique_filename = f"{uuid.uuid4().hex}.jpg"
+        temp_filepath = os.path.join(temp_dir, unique_filename)
+        
+        # 保存文件
+        file.save(temp_filepath)
+        
+        # 分析图像
+        result = cnn_crop_analyzer.analyze_image_file(temp_filepath)
+        
+        # 延迟删除文件（避免 Windows 文件锁定问题）
+        try:
+            import time
+            import threading
+            
+            def delayed_delete(filepath, delay_seconds=2):
+                time.sleep(delay_seconds)
+                try:
+                    if os.path.exists(filepath):
+                        os.remove(filepath)
+                except Exception as e:
+                    logger.warning(f"删除临时文件失败：{e}")
+            
+            # 在后台线程中延迟删除
+            threading.Thread(target=delayed_delete, args=(temp_filepath, 2), daemon=True).start()
+        except Exception:
+            pass
+        
+        return jsonify(result)
+    except Exception as e:
+        logger.error(f"图像分析失败：{e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/vision/crop-health/classes')
+def get_crop_health_classes():
+    """获取 CNN 识别的病害类别列表"""
+    if not cnn_crop_analyzer:
+        return jsonify({'error': 'CNN 作物分析器未初始化'}), 500
+    
+    return jsonify({
+        'classes': cnn_crop_analyzer.get_class_labels(),
+        'disease_info': cnn_crop_analyzer.get_disease_info()
     })
 
 
@@ -588,28 +853,80 @@ def ai_chat():
     
     # 获取当前传感器数据作为上下文
     context = None
-    if use_context and environment_sensor and soil_sensor:
-        context = {
-            'environment': environment_sensor.read_all(),
-            'soil': soil_sensor.read_all()
-        }
-        if system_status['simulation_enabled']:
-            # 应用模拟配置值
-            for key, value in simulation_config['environment'].items():
-                if key in context['environment']:
-                    context['environment'][key] = value['value']
-            for i in range(3):
-                point_key = f'point_{i}'
-                if point_key in simulation_config['soil']:
-                    context['soil']['points'][i] = {
-                        'point_id': i,
-                        'moisture': simulation_config['soil'][point_key]['value'],
-                        'status': 'optimal',
-                        'timestamp': datetime.now().isoformat()
-                    }
-            context['soil']['average'] = round(
-                sum(p['moisture'] for p in context['soil']['points']) / 3, 2
-            )
+    if use_context:
+        context = {}
+        
+        # 环境数据
+        if environment_sensor:
+            env_data = environment_sensor.read_all()
+            if system_status['simulation_enabled']:
+                for key, value in simulation_config['environment'].items():
+                    if key in env_data:
+                        env_data[key] = value['value']
+            context['environment'] = env_data
+        
+        # 土壤数据
+        if soil_sensor:
+            soil_data = soil_sensor.read_all()
+            if system_status['simulation_enabled']:
+                for i in range(3):
+                    point_key = f'point_{i}'
+                    if point_key in simulation_config['soil']:
+                        soil_data['points'][i] = {
+                            'point_id': i,
+                            'moisture': simulation_config['soil'][point_key]['value'],
+                            'status': 'optimal',
+                            'timestamp': datetime.now().isoformat()
+                        }
+                soil_data['average'] = round(
+                    sum(p['moisture'] for p in soil_data['points']) / 3, 2
+                )
+            context['soil'] = soil_data
+        
+        # 叶片健康数据
+        if leaf_analyzer:
+            try:
+                leaf_result = leaf_analyzer.analyze(None)
+                context['vision'] = context.get('vision', {})
+                context['vision']['leaf_health'] = leaf_result
+            except Exception as e:
+                logger.warning(f"获取叶片健康数据失败：{e}")
+        
+        # 生长测量数据
+        if growth_measure:
+            try:
+                growth_result = growth_measure.analyze(None)
+                context['vision'] = context.get('vision', {})
+                context['vision']['growth_measure'] = growth_result
+            except Exception as e:
+                logger.warning(f"获取生长测量数据失败：{e}")
+        
+        # CNN 作物健康数据
+        if cnn_crop_analyzer:
+            try:
+                # 使用模拟数据或返回分析结果
+                crop_health_result = cnn_crop_analyzer.analyze(None)
+                context['vision'] = context.get('vision', {})
+                context['vision']['crop_health'] = crop_health_result
+            except Exception as e:
+                logger.warning(f"获取 CNN 作物健康数据失败：{e}")
+        
+        # 决策数据
+        if rules_engine and llm_advisor:
+            try:
+                decision_data = {
+                    'environment': context.get('environment', {}),
+                    'soil': context.get('soil', {}),
+                    'vision': context.get('vision', {})
+                }
+                rules_decision = rules_engine.evaluate(decision_data)
+                llm_advice = llm_advisor.get_advice(decision_data)
+                context['decisions'] = {
+                    'rules': rules_decision,
+                    'llm_advice': llm_advice
+                }
+            except Exception as e:
+                logger.warning(f"获取决策数据失败：{e}")
     
     # 获取对话历史
     history = conversation_histories.get(session_id, [])

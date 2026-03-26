@@ -796,28 +796,108 @@ class LLMAdvisor:
         """格式化上下文数据"""
         parts = []
         
+        # 环境数据
         env = context.get('environment', {})
         if env:
-            parts.append("环境数据：")
-            parts.append(f"  - 温度：{env.get('temperature', 'N/A')}°C")
-            parts.append(f"  - 湿度：{env.get('humidity', 'N/A')}%")
-            parts.append(f"  - 光照：{env.get('light_intensity', 'N/A')} lux")
-            parts.append(f"  - CO2: {env.get('co2', 'N/A')} ppm")
+            parts.append("【环境数据】")
+            parts.append(f"  温度：{env.get('temperature', 'N/A')}°C")
+            parts.append(f"  湿度：{env.get('humidity', 'N/A')}%")
+            parts.append(f"  光照：{env.get('light_intensity', env.get('light', 'N/A'))} lux")
+            parts.append(f"  CO2: {env.get('co2', 'N/A')} ppm")
+            if env.get('pressure'):
+                parts.append(f"  气压：{env.get('pressure', 'N/A')} hPa")
+            if env.get('voc'):
+                parts.append(f"  VOC: {env.get('voc', 'N/A')} ppb")
+            parts.append("")
         
+        # 土壤数据
         soil = context.get('soil', {})
         if soil:
-            parts.append("土壤数据：")
-            for key, value in soil.items():
-                if isinstance(value, dict):
-                    parts.append(f"  - {key}: {value.get('moisture', 'N/A')}%")
+            parts.append("【土壤数据】")
+            if 'average' in soil:
+                parts.append(f"  平均土壤湿度：{soil.get('average', 'N/A')}%")
+            if 'points' in soil:
+                for point in soil['points']:
+                    if isinstance(point, dict):
+                        point_id = point.get('point_id', '?')
+                        moisture = point.get('moisture', 'N/A')
+                        status = point.get('status', 'unknown')
+                        status_icon = {'dry': '🔴 偏干', 'wet': '🔵 偏湿', 'optimal': '🟢 适宜'}.get(status, '')
+                        parts.append(f"  监测点{point_id+1}: {moisture}% {status_icon}")
+            parts.append("")
         
+        # 视觉数据（作物健康）
         vision = context.get('vision', {})
         if vision:
+            parts.append("【作物健康分析】")
+            
+            # 叶片健康
             leaf = vision.get('leaf_health', {})
             if leaf:
-                parts.append("作物健康：")
-                parts.append(f"  - 病害类型：{leaf.get('disease_type', 'N/A')}")
-                parts.append(f"  - 健康评分：{leaf.get('health_score', 'N/A')}")
+                parts.append("  🍃 叶片分析：")
+                if leaf.get('disease_type'):
+                    parts.append(f"    - 病害类型：{leaf.get('disease_type', 'N/A')}")
+                if leaf.get('health_score'):
+                    parts.append(f"    - 健康评分：{leaf.get('health_score', 'N/A')}/100")
+                if leaf.get('confidence'):
+                    parts.append(f"    - 置信度：{leaf.get('confidence', 'N/A'):.1%}")
+                if leaf.get('recommendations'):
+                    recs = leaf.get('recommendations', [])
+                    if recs:
+                        parts.append(f"    - 建议：{recs[0] if recs else '无'}")
+            
+            # CNN 作物健康
+            crop_health = vision.get('crop_health', {})
+            if crop_health:
+                parts.append("  🌱 CNN 作物分析：")
+                if crop_health.get('prediction'):
+                    parts.append(f"    - 预测类别：{crop_health.get('prediction', 'N/A')}")
+                if crop_health.get('confidence'):
+                    parts.append(f"    - 置信度：{crop_health.get('confidence', 'N/A'):.1%}")
+                if crop_health.get('health_status'):
+                    parts.append(f"    - 健康状态：{crop_health.get('health_status', 'N/A')}")
+                if crop_health.get('recommendations'):
+                    recs = crop_health.get('recommendations', [])
+                    if recs:
+                        parts.append(f"    - 建议：{recs[0] if recs else '无'}")
+            
+            # 生长测量
+            growth = vision.get('growth_measure', {})
+            if growth:
+                parts.append("  📏 生长测量：")
+                if growth.get('plant_height'):
+                    parts.append(f"    - 植株高度：{growth.get('plant_height', 'N/A')} cm")
+                if growth.get('leaf_area'):
+                    parts.append(f"    - 叶面积：{growth.get('leaf_area', 'N/A')} cm²")
+                if growth.get('growth_rate'):
+                    parts.append(f"    - 生长速率：{growth.get('growth_rate', 'N/A')} cm/天")
+            
+            parts.append("")
+        
+        # 决策数据
+        decisions = context.get('decisions', {})
+        if decisions:
+            parts.append("【决策建议】")
+            
+            # 规则引擎决策
+            rules = decisions.get('rules', {})
+            if rules:
+                parts.append("  📋 规则引擎建议：")
+                if rules.get('recommendations'):
+                    for rec in rules.get('recommendations', [])[:3]:
+                        parts.append(f"    • {rec}")
+            
+            # LLM 建议
+            llm_advice = decisions.get('llm_advice', {})
+            if llm_advice:
+                parts.append("  🤖 AI 顾问建议：")
+                if llm_advice.get('summary'):
+                    parts.append(f"    {llm_advice.get('summary', '')}")
+            
+            parts.append("")
+        
+        if not parts:
+            return "暂无传感器数据"
         
         return "\n".join(parts)
     
