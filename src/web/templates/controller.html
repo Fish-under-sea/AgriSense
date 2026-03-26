@@ -1477,18 +1477,21 @@
             }
         }
         
-        // 更新按钮显示
+        // 更新按钮显示 - 修复版
         function updateButton(device) {
             const btn = document.getElementById('btn' + device.charAt(0).toUpperCase() + device.slice(1));
-            const stateText = deviceStates[device] ? '开启' : '关闭';
-            btn.className = 'control-btn ' + (deviceStates[device] ? 'on' : 'off');
+            if (!btn) return;
+
+            const isOn = deviceStates[device];
+            const stateText = isOn ? '开启' : '关闭';
+            
+            // === 关键修复：使用 classList 保留 cursor-target ===
+            btn.classList.remove('on', 'off');
+            btn.classList.add(isOn ? 'on' : 'off');
+            
+            // 更新文字内容（不影响类名）
             const icons = { irrigation: '💧', light: '💡', fan: '🌀', shade: '☂️' };
             btn.textContent = icons[device] + ' ' + getDeviceName(device) + '：' + stateText;
-        }
-        
-        function getDeviceName(device) {
-            const names = { irrigation: '灌溉系统', light: '补光系统', fan: '通风系统', shade: '遮阳系统' };
-            return names[device] || device;
         }
         
         // 紧急停止
