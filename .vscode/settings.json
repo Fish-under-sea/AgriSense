@@ -1,5 +1,10 @@
 {
     "python-envs.defaultEnvManager": "ms-python.python:conda",
     "python-envs.defaultPackageManager": "ms-python.python:conda",
-    "idf.currentSetup": "C:/Espressif/frameworks/esp-idf-v5.4.3/"
+    "idf.currentSetup": "C:/Espressif/frameworks/esp-idf-v5.4.3/",
+    "idf.portWin": "COM3",
+    "idf.openOcdConfigs": [
+        "board/esp32s3-builtin.cfg"
+    ],
+    "idf.monitorPort": "COM3"
 }
