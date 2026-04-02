@@ -1,0 +1,9 @@
+# IDE 配置
+.cursor/
+.vscode/
+
+# 忽略根目录下的 builds 文件夹
+builds/
+
+# 忽略 src/web 下的 builds 文件夹
+src/web/builds/
