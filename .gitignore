@@ -1,3 +1,7 @@
+# IDE 配置（不提交）
+.cursor/
+.vscode/
+
 # 忽略根目录下的 builds 文件夹
 /builds/
 
