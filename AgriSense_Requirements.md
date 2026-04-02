@@ -83,13 +83,35 @@ AgriSense 是一个面向智能大棚的农业监控系统，集成了环境传�
 - **动作类型**: 灌溉、补光、通风、遮阳
 
 #### 3.2 LLM 顾问 (llm_advisor.py)
-- **支持模型**:
+
+**支持模型**:
   - Qwen3.5 (本地 Ollama)
   - GPT-4o-mini (OpenAI)
-- **功能**:
+
+**功能**:
   - 智能决策建议（30 字以内）
   - 每日生长报告
   - 综合环境分析
+
+**接入配置**:
+
+1. **Ollama (Qwen3.5，本地推荐)**
+
+   确保 Ollama 服务已启动：
+   ```bash
+   ollama run qwen3.5
+   ```
+   配置文件中启用并指向 `http://localhost:11434`。
+
+2. **OpenAI (GPT-4o-mini)**
+
+   设置环境变量：
+   ```bash
+   export OPENAI_API_KEY="your-api-key-here"
+   ```
+   或在配置文件的 `gpt-4o-mini.base_url` 中填入代理地址（如需代理）。
+
+3. **切换模型**：在 `config.json` 的 `decision.llm_advisor.models` 中选择要使用的模型即可。
 
 ### 4. 控制模块 (src/control/)
 
@@ -145,9 +167,12 @@ AgriSense/
 ```
 
 ## 项目渲染
-> 概念图![alt text](rendering/concept_art.png)
 
-> UI原型![alt text](rendering/ui_mockup.png)
+> **提示**：系统架构概念图和 Web UI 原型图请放入 `rendering/` 目录，命名为 `concept_art.png` 和 `ui_mockup.png` 后替换下方链接。若暂无图片，可直接删除以下两行。
+
+![概念图](rendering/concept_art.png)
+
+![UI 原型](rendering/ui_mockup.png)
 
 ## 运行模式
 
@@ -163,10 +188,14 @@ AgriSense/
 
 ## 开发计划
 
-- [ ] 添加数据持久化 (SQLite)
-- [ ] 实现历史数据图表展示
-- [ ] 添加用户认证系统
-- [ ] 支持多大棚管理
-- [ ] 移动端适配
-- [ ] 添加更多病害识别模型
-- [ ] 实现自动化控制策略优化
+- [x] Web 界面 (Flask，src/web/)
+- [x] 传感器模拟模式 (所有传感器支持)
+- [x] 叶片病害分析 (OpenCV)
+- [x] LLM 决策顾问 (Ollama / OpenAI)
+- [ ] 数据持久化 (SQLite)
+- [ ] 历史数据图表展示
+- [ ] 用户认证系统
+- [ ] 多大棚管理
+- [ ] 移动端适配（见 [App_Requirements.md](App_Requirements.md)）
+- [ ] 更多病害识别模型（TensorFlow/CNN）
+- [ ] 自动化控制策略优化

@@ -75,13 +75,48 @@ static const String baseUrl = 'http://your-server-ip:5000';
 
 ## 主要依赖
 
-- **provider**: 状态管理
-- **http**: HTTP 请求
-- **web_socket_channel**: WebSocket 通信
-- **fl_chart**: 图表绘制
-- **shared_preferences**: 本地存储
-- **camera**: 相机功能
-- **image_picker**: 图片选择
+```yaml
+# pubspec.yaml 中对应版本（推荐）
+dependencies:
+  provider: ^6.1.2          # 状态管理
+  http: ^1.2.2              # HTTP 请求
+  web_socket_channel: ^3.0.1 # WebSocket 通信（用于实时数据推送）
+  fl_chart: ^0.69.0          # 图表绘制
+  shared_preferences: ^2.3.3  # 本地存储
+  camera: ^0.11.0+2           # 相机功能
+  image_picker: ^1.1.2       # 图片选择
+```
+
+### 状态管理选型说明
+
+项目使用 **Provider** 作为状态管理方案，原因如下：
+
+- API 简单，学习成本低，适合中小型应用
+- 与 Flutter 官方推荐的架构风格一致
+- `SensorProvider` / `DeviceProvider` / `AIProvider` 分别管理传感器数据、设备状态、AI 建议，职责清晰
+
+### WebSocket 使用说明
+
+实时数据推送通过 `web_socket_channel` 实现。连接方式：
+
+```dart
+import 'package:web_socket_channel/web_socket_channel.dart';
+
+final channel = WebSocketChannel.connect(
+  Uri.parse('ws://your-server-ip:5000/ws/sensors'),
+);
+
+// 监听实时数据
+channel.stream.listen((message) {
+  // message 为 JSON 格式的传感器数据
+  print(message);
+});
+
+// 主动断开
+channel.sink.close();
+```
+
+> 后端 WebSocket 端点：`ws://localhost:5000/ws/sensors`（需后端 `app.py` 支持，具体路径以实际实现为准）。
 
 ## 使用说明
 
@@ -103,11 +138,17 @@ static const String baseUrl = 'http://your-server-ip:5000';
 
 ## 开发计划
 
-- [ ] 添加实时数据推送 (WebSocket)
-- [ ] 实现图像上传和病害识别
-- [ ] 添加历史数据查询
-- [ ] 实现告警通知功能
-- [ ] 支持多大棚管理
+- [x] 项目结构与 Provider 状态管理
+- [x] HTTP API 服务层 (`api_service.dart`)
+- [x] 实时数据监控界面
+- [x] 设备控制界面
+- [x] AI 建议展示页面
+- [x] 多主题切换（浅色/深色）
+- [ ] 实时数据推送 (WebSocket)
+- [ ] 图像上传和病害识别
+- [ ] 历史数据查询
+- [ ] 告警通知功能
+- [ ] 多大棚管理
 
 ## 许可证
 
