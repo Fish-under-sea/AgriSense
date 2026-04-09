@@ -2,6 +2,18 @@
 .cursor/
 .vscode/
 
+# Python 缓存
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
 # 忽略根目录下的 builds 文件夹
 builds/
 
