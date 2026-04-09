@@ -14,10 +14,16 @@ import logging
 import json
 import os
 import sys
+import warnings
 from datetime import datetime
 from typing import Dict, Any, List
 from flask import Flask, render_template, jsonify, request, Response, make_response
 from flask_cors import CORS
+
+# 静默 TensorFlow 警告和提示
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+# 静默 Keras/TensorFlow Python 警告
+warnings.filterwarnings('ignore', message='.*tf\\.losses\\.sparse_softmax_cross_entropy.*')
 
 # 添加父目录到路径以导入其他模块
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -978,6 +984,7 @@ def ai_chat():
     
     return jsonify({
         'response': response.get('response', ''),
+        'thinking': response.get('thinking', ''),
         'model': response.get('model', 'unknown'),
         'timestamp': datetime.now().isoformat(),
         'error': response.get('error', False)

@@ -70,22 +70,31 @@
     },
     "llm_advisor": {
       "enabled": true,
-      "default_model": "gpt-4o-mini",
+      "default_model": "gemma4",
       "models": {
-        "qwen3.5": {
-          "name": "②Qwen 3.5 9B (本地)",
+        "gemma4": {
+          "name": "①Gemma 4 e4b (本地)",
           "provider": "ollama",
-          "model": "qwen3.5:9b",
+          "model": "gemma4:e4b",
           "base_url": "http://localhost:11434",
           "api_key": "",
-          "enabled": true
+          "enabled": true,
+          "supports_thinking": true
         },
         "gpt-4o-mini": {
-          "name": "①Gpt-4o-mini (主力)",
+          "name": "②Gpt-4o-mini (云端)",
           "provider": "openai",
           "model": "gpt-4o-mini",
           "base_url": "https://free.v36.cm/v1",
           "api_key": "sk-FI9VrF3YkNwQ53lp4684E7D1E856431eA32d399aC1906fA7",
+          "enabled": true
+        },
+        "qwen3.5": {
+          "name": "③Qwen 3.5 9B (本地)",
+          "provider": "ollama",
+          "model": "qwen3.5:9b",
+          "base_url": "http://localhost:11434",
+          "api_key": "",
           "enabled": true
         }
       }

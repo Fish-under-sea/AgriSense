@@ -730,22 +730,18 @@ class LLMAdvisor:
     def _chat_llm(self, message: str, context: Dict[str, Any] = None, conversation_history: List[Dict[str, str]] = None) -> Dict[str, Any]:
         """使用 LLM 进行对话"""
         try:
-            # 构建消息列表
             messages = []
             
-            # 添加系统提示
             messages.append({
                 'role': 'system',
                 'content': self.CONVERSATIONAL_SYSTEM_PROMPT
             })
             
-            # 添加对话历史
             if conversation_history:
-                for turn in conversation_history[-10:]:  # 只保留最近 10 轮对话
+                for turn in conversation_history[-10:]:
                     messages.append({'role': 'user', 'content': turn['user']})
                     messages.append({'role': 'assistant', 'content': turn['assistant']})
             
-            # 添加当前上下文数据（如果有）
             if context:
                 context_info = self._format_context(context)
                 if context_info:
@@ -758,7 +754,9 @@ class LLMAdvisor:
             else:
                 messages.append({'role': 'user', 'content': message})
             
-            # 调用 LLM
+            thinking = ''
+            content = ''
+            
             if OLLAMA_AVAILABLE and self.client:
                 response = self.client.chat(
                     model=self.model_name,
@@ -774,11 +772,19 @@ class LLMAdvisor:
                 content = response.choices[0].message.content
             
             else:
-                # 使用 requests 调用
-                content = self._call_chat_api(messages)
+                result = self._call_chat_api(messages)
+                content = result.get('response', '')
+                thinking = result.get('thinking', '')
+            
+            import re
+            if '</think>' in content and not thinking:
+                think_matches = re.findall(r'<think>(.*?)</think>', content, re.DOTALL)
+                thinking = '\n'.join([t.strip() for t in think_matches])
+                content = re.sub(r'<think>.*?</think>', '', content, flags=re.DOTALL).strip()
             
             return {
                 'response': content,
+                'thinking': thinking,
                 'model': self.model_name,
                 'timestamp': datetime.now().isoformat()
             }
@@ -787,6 +793,7 @@ class LLMAdvisor:
             logger.error(f"对话失败：{e}")
             return {
                 'response': f"抱歉，我遇到了一个问题：{str(e)}。请稍后再试。",
+                'thinking': '',
                 'model': self.model_name,
                 'timestamp': datetime.now().isoformat(),
                 'error': True
@@ -901,23 +908,19 @@ class LLMAdvisor:
         
         return "\n".join(parts)
     
-    def _call_chat_api(self, messages: List[Dict[str, str]]) -> str:
-        """调用聊天 API"""
+    def _call_chat_api(self, messages: List[Dict[str, str]]) -> Dict[str, str]:
+        """调用聊天 API，返回响应内容和思考过程"""
         try:
-            # 根据 provider 类型选择正确的 API 端点
             if self.provider == 'ollama':
-                # Ollama 使用 /api/generate 端点，需要转换消息格式
                 return self._call_ollama_api(messages)
             else:
-                # OpenAI 兼容 API 使用 /v1/chat/completions 端点
                 return self._call_openai_api(messages)
         except Exception as e:
             logger.error(f"聊天 API 调用失败：{e}")
             raise
     
-    def _call_ollama_api(self, messages: List[Dict[str, str]]) -> str:
-        """调用 Ollama API"""
-        # 将消息列表合并为单个 prompt
+    def _call_ollama_api(self, messages: List[Dict[str, str]]) -> Dict[str, str]:
+        """调用 Ollama API，提取思考过程"""
         full_prompt = ""
         system_prompt = ""
         
@@ -935,15 +938,29 @@ class LLMAdvisor:
                 "model": self.model_name,
                 "prompt": full_prompt,
                 "system": system_prompt,
-                "stream": False
+                "stream": False,
+                "think": True
             },
             headers={"Content-Type": "application/json"},
-            timeout=60
+            timeout=120
         )
         response.raise_for_status()
-        return response.json()['response']
+        result = response.json()
+        
+        raw_response = result.get('response', '')
+        thinking = result.get('think', '')
+        
+        if not thinking and '</think>' in raw_response:
+            import re
+            think_matches = re.findall(r'<think>(.*?)</think>', raw_response, re.DOTALL)
+            thinking = '\n'.join([t.strip() for t in think_matches])
+        
+        return {
+            'response': raw_response,
+            'thinking': thinking.strip() if thinking else ''
+        }
     
-    def _call_openai_api(self, messages: List[Dict[str, str]]) -> str:
+    def _call_openai_api(self, messages: List[Dict[str, str]]) -> Dict[str, str]:
         """调用 OpenAI 兼容 API"""
         url = f"{self.base_url}/chat/completions"
         logger.info(f"调用 OpenAI API: {url}, 模型：{self.model_name}")
@@ -958,14 +975,16 @@ class LLMAdvisor:
                 "Content-Type": "application/json",
                 "Authorization": f"Bearer {self.api_key}"
             },
-            timeout=120  # 增加超时时间
+            timeout=120
         )
         
-        # 详细错误日志
         if response.status_code != 200:
             logger.error(f"API 响应状态码：{response.status_code}")
             logger.error(f"API 响应内容：{response.text}")
             raise Exception(f"API 调用失败：{response.status_code} {response.text}")
         
         data = response.json()
-        return data['choices'][0]['message']['content']
+        return {
+            'response': data['choices'][0]['message']['content'],
+            'thinking': ''
+        }

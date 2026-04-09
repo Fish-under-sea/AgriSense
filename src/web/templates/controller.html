@@ -97,6 +97,14 @@
         .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
         .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
         @keyframes typing { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-10px); } }
+        .thinking-toggle { display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: rgba(102, 126, 234, 0.1); border: 1px solid rgba(102, 126, 234, 0.3); border-radius: 15px; cursor: pointer; font-size: 0.8em; color: #667eea; transition: all 0.3s; margin-left: 10px; }
+        .thinking-toggle:hover { background: rgba(102, 126, 234, 0.2); }
+        .thinking-toggle.active { background: rgba(102, 126, 234, 0.2); border-color: #667eea; }
+        .thinking-content { background: linear-gradient(135deg, rgba(102, 126, 234, 0.08), rgba(118, 75, 162, 0.08)); border: 1px solid rgba(102, 126, 234, 0.2); border-radius: 10px; padding: 12px 15px; margin: 8px 0; font-size: 0.85em; color: #555; max-height: 200px; overflow-y: auto; line-height: 1.6; white-space: pre-wrap; }
+        .thinking-content::-webkit-scrollbar { width: 6px; }
+        .thinking-content::-webkit-scrollbar-track { background: transparent; }
+        .thinking-content::-webkit-scrollbar-thumb { background: rgba(102, 126, 234, 0.3); border-radius: 3px; }
+        .thinking-label { display: flex; align-items: center; gap: 6px; font-weight: 600; color: #667eea; margin-bottom: 8px; font-size: 0.8em; }
         .toggle-switch { position: relative; width: 50px; height: 26px; }
         .toggle-switch input { opacity: 0; width: 0; height: 0; }
         .toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(200, 200, 200, 0.8); transition: 0.4s; border-radius: 26px; }
@@ -294,6 +302,7 @@
                     <div class="ai-avatar">🌱</div>
                     <div style="flex: 1;"><strong>AgriSense AI</strong><p class="ai-status online" id="aiStatus">● 在线 | 加载模型中...</p></div>
                     <div style="display: flex; gap: 10px; align-items: center;">
+                        <button class="thinking-toggle cursor-target" id="thinkingToggle" onclick="toggleThinkingDisplay()">🧠 思考过程</button>
                         <select id="modelSelect" onchange="switchModel()" style="padding: 8px 12px; border-radius: 5px; border: 1px solid #ddd; font-size: 0.85em;">
                             <option value="">选择模型...</option>
                         </select>
@@ -955,6 +964,20 @@
             }
         }
         
+        let showThinking = false;
+        
+        function toggleThinkingDisplay() {
+            showThinking = !showThinking;
+            const btn = document.getElementById('thinkingToggle');
+            btn.classList.toggle('active', showThinking);
+            localStorage.setItem('showThinking', showThinking);
+            if (showThinking) {
+                btn.textContent = '🧠 隐藏思考';
+            } else {
+                btn.textContent = '🧠 思考过程';
+            }
+        }
+        
         async function sendMessage() {
             const input = document.getElementById('chatInput');
             const message = input.value.trim();
@@ -980,7 +1003,7 @@
                 const indicator = document.getElementById('typingIndicator');
                 if (indicator) indicator.remove();
                 if (data.error) addChatMessage('assistant', '抱歉，我遇到了一个问题：' + data.response);
-                else addChatMessage('assistant', data.response);
+                else addChatMessage('assistant', data.response, data.thinking);
             } catch (error) {
                 console.error('发送消息失败:', error);
                 const indicator = document.getElementById('typingIndicator');
@@ -992,12 +1015,19 @@
             }
         }
         
-        function addChatMessage(role, text) {
+        function addChatMessage(role, text, thinking = '') {
             const messagesContainer = document.getElementById('chatMessages');
             const messageDiv = document.createElement('div');
             messageDiv.className = 'chat-message ' + role;
             const roleNames = { user: '你', assistant: 'AgriSense AI' };
-            messageDiv.innerHTML = `<div class="message-role">${roleNames[role]}</div><div>${text}</div>`;
+            let html = `<div class="message-role">${roleNames[role]}</div><div>${text}</div>`;
+            if (role === 'assistant' && thinking) {
+                html += `<div class="thinking-content" style="display: ${showThinking ? 'block' : 'none'};">
+                    <div class="thinking-label">🧠 AI 思考过程</div>
+                    ${thinking.replace(/\n/g, '<br>')}
+                </div>`;
+            }
+            messageDiv.innerHTML = html;
             messagesContainer.appendChild(messageDiv);
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
@@ -1022,6 +1052,13 @@
         }
 
         window.addEventListener('DOMContentLoaded', () => {
+            const savedShowThinking = localStorage.getItem('showThinking');
+            if (savedShowThinking === 'true') {
+                showThinking = true;
+                const btn = document.getElementById('thinkingToggle');
+                btn.classList.add('active');
+                btn.textContent = '🧠 隐藏思考';
+            }
             const splashText = document.querySelector('.splash-text');
             setTimeout(() => {
                 if (splashText) splashText.classList.add('fill');
