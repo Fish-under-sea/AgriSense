@@ -1,6 +1,7 @@
 # IDE 配置
 .cursor/
 .vscode/
+.idea/
 
 # Python 缓存
 __pycache__/
@@ -13,9 +14,63 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+venv/
+env/
+.venv/
+ENV/
+Pipfile.lock
+poetry.lock
 
-# 忽略根目录下的 builds 文件夹
+# 环境变量
+.env
+.env.local
+.env.development
+.env.production
+.env.*.local
+
+# 日志文件
+*.log
+logs/
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Flutter/Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+
+# 移动端构建产物
+*.apk
+*.aab
+*.ipa
+
+# 临时文件
+*.tmp
+*.temp
+~*
+*.swp
+*.swo
+*~
+.git~
+
+# 二进制和压缩包
+*.zip
+*.tar.gz
+*.rar
+*.7z
+*.dmg
+
+# 数据库文件
+*.db
+*.sqlite
+*.sqlite3
+*.mdb
+
+# 构建目录
 builds/
-
-# 忽略 src/web 下的 builds 文件夹
 src/web/builds/
