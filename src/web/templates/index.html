@@ -1438,7 +1438,17 @@ void main() {
         initGithubAvatar();
         initElectricBorder();
         initSphereGallery();
+
+        // 初始化自定义 Live2D 看板娘（支持 PMX 模型）
+        initLive2DWidget();
     });
     </script>
+
+    <!-- pixi-live2d-display 依赖 -->
+    <script src="https://cdn.jsdelivr.net/npm/pixi.js@7.4.2/dist/pixi.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/live2d@4.0.1/dist/Live2DCubismCore.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pixi-live2d-display@0.4.0/dist/index.min.js"></script>
+    <!-- 自定义 Live2D 看板娘 -->
+    <script src="/static/live2d/custom-widget.js"></script>
 </body>
 </html>
