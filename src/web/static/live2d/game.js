@@ -228,7 +228,7 @@ function TargetClickGame() {
     if (timer) clearInterval(timer);
     if (animationId) cancelAnimationFrame(animationId);
 
-    // 显示结束画面
+    // 清空画布
     ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -241,29 +241,222 @@ function TargetClickGame() {
     ctx.font = '24px Arial';
     ctx.fillText(`最终得分: ${score}`, canvas.width / 2, canvas.height / 2 + 10);
 
-    // 重新开始按钮
+    // 移除已有的按钮（防止重复）
+    const existingBtn = gameContainer.querySelector('.tg-retry-btn, .tg-egg-btn');
+    if (existingBtn) existingBtn.remove();
+
     setTimeout(() => {
       const btn = document.createElement('button');
-      btn.textContent = '再玩一次';
-      btn.style.cssText = `
-        position: absolute;
-        top: ${canvas.getBoundingClientRect().top + canvas.height / 2 + 50}px;
-        left: 50%;
-        transform: translateX(-50%);
-        padding: 12px 30px;
-        background: #4ecca3;
-        color: #000;
-        border: none;
-        border-radius: 25px;
-        font-size: 16px;
-        cursor: pointer;
-      `;
-      btn.onclick = () => {
-        btn.remove();
-        this.start();
-      };
+
+      if (score > 800) {
+        // 彩蛋模式：显示鸡蛋按钮
+        btn.textContent = '🥚';
+        btn.className = 'tg-egg-btn';
+        btn.title = '点我有惊喜！';
+        btn.style.cssText = `
+          position: absolute;
+          top: ${canvas.getBoundingClientRect().top + canvas.height / 2 + 50}px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 80px;
+          height: 80px;
+          background: radial-gradient(circle at 40% 35%, #fff8e1, #f5d060, #e8a020);
+          border: 3px solid #c07010;
+          border-radius: 50%;
+          font-size: 40px;
+          cursor: pointer;
+          box-shadow: 0 6px 20px rgba(0,0,0,0.4), inset 0 -3px 8px rgba(0,0,0,0.15);
+          transition: transform 0.2s;
+          z-index: 10;
+        `;
+        btn.onmouseover = () => btn.style.transform = 'translateX(-50%) scale(1.15)';
+        btn.onmouseout = () => btn.style.transform = 'translateX(-50%) scale(1)';
+        btn.onclick = () => showEggExplosion();
+      } else {
+        // 普通模式：再玩一次
+        btn.textContent = '再玩一次';
+        btn.className = 'tg-retry-btn';
+        btn.style.cssText = `
+          position: absolute;
+          top: ${canvas.getBoundingClientRect().top + canvas.height / 2 + 50}px;
+          left: 50%;
+          transform: translateX(-50%);
+          padding: 12px 30px;
+          background: #4ecca3;
+          color: #000;
+          border: none;
+          border-radius: 25px;
+          font-size: 16px;
+          cursor: pointer;
+        `;
+        btn.onclick = () => {
+          btn.remove();
+          this.start();
+        };
+      }
+
       gameContainer.appendChild(btn);
     }, 500);
+  }
+
+  // ===== 彩蛋破蛋动画 =====
+  function showEggExplosion() {
+    // 隐藏鸡蛋按钮
+    const eggBtn = gameContainer.querySelector('.tg-egg-btn');
+    if (eggBtn) eggBtn.style.display = 'none';
+
+    // 创建鸡蛋容器的中心位置
+    const eggRect = gameContainer.getBoundingClientRect();
+    const centerX = eggRect.width / 2;
+    const centerY = eggRect.height / 2;
+
+    // 创建动画覆盖层
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 20;
+    `;
+
+    // 鸡蛋
+    const egg = document.createElement('div');
+    egg.style.cssText = `
+      position: absolute;
+      left: ${centerX - 60}px;
+      top: ${centerY - 80}px;
+      width: 120px;
+      height: 160px;
+      background: radial-gradient(circle at 40% 35%, #fff8e1, #f5d060, #e8a020);
+      border: 4px solid #c07010;
+      border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+      animation: egg-crack-in 0.4s ease-out forwards;
+      transform-origin: center center;
+    `;
+    overlay.appendChild(egg);
+
+    // 裂纹文字
+    const crackText = document.createElement('div');
+    crackText.textContent = '💥';
+    crackText.style.cssText = `
+      position: absolute;
+      left: ${centerX - 30}px;
+      top: ${centerY - 30}px;
+      font-size: 60px;
+      opacity: 0;
+      animation: crack-flash 0.3s ease-out 0.3s forwards;
+    `;
+    overlay.appendChild(crackText);
+
+    // 生成碎片和彩带
+    const fragments = [];
+    const colors = ['#FFD700', '#FF6B6B', '#4ECDC4', '#FF69B4', '#7B68EE', '#FFD700', '#fff'];
+    const fragmentsCount = 28;
+    for (let i = 0; i < fragmentsCount; i++) {
+      const angle = (Math.PI * 2 / fragmentsCount) * i + Math.random() * 0.5;
+      const speed = 180 + Math.random() * 200;
+      const size = 12 + Math.random() * 20;
+      const color = colors[i % colors.length];
+      const isCircle = i % 3 === 0;
+
+      const frag = document.createElement('div');
+      const delay = 0.15 + Math.random() * 0.2;
+      const isConfetti = i % 4 === 0;
+
+      frag.style.cssText = `
+        position: absolute;
+        left: ${centerX}px;
+        top: ${centerY}px;
+        width: ${isConfetti ? 12 : size}px;
+        height: ${isConfetti ? size * 0.6 : size}px;
+        background: ${isConfetti ? color : 'radial-gradient(circle at 30% 30%, #fff8e1, #f5d060, #c07010)'};
+        ${isCircle ? 'border-radius: 50%;' : 'border-radius: 3px;'}
+        border: ${isConfetti ? 'none' : '2px solid #a05000'};
+        transform: translate(-50%, -50%) scale(0);
+        animation: frag-fly-${i % 4} ${0.8 + Math.random() * 0.5}s ${delay}s ease-out forwards;
+      `;
+
+      // 动态创建关键帧
+      const keyName = `frag-fly-${i % 4}`;
+      if (!document.getElementById('egg-dyn-css')) {
+        const styleEl = document.createElement('style');
+        styleEl.id = 'egg-dyn-css';
+        document.head.appendChild(styleEl);
+      }
+      const styleEl = document.getElementById('egg-dyn-css');
+      const vx = Math.cos(angle) * speed;
+      const vy = Math.sin(angle) * speed - 80;
+      const rot = (Math.random() * 720 - 360) + 'deg';
+      const rot2 = (Math.random() * 720 - 360) + 'deg';
+      styleEl.textContent += `
+        @keyframes frag-fly-${i % 4} {
+          0%   { transform: translate(-50%, -50%) scale(0); opacity: 1; }
+          60%  { transform: translate(calc(-50% + ${vx * 0.6}px), calc(-50% + ${vy * 0.6}px)) scale(1.2) rotate(${rot}); opacity: 1; }
+          100% { transform: translate(calc(-50% + ${vx}px), calc(-50% + ${vy + 150}px)) scale(0.5) rotate(${rot2}); opacity: 0; }
+        }
+      `;
+
+      fragments.push(frag);
+      overlay.appendChild(frag);
+    }
+
+    // 光芒扩散
+    const flash = document.createElement('div');
+    flash.style.cssText = `
+      position: absolute;
+      left: ${centerX - 100}px;
+      top: ${centerY - 100}px;
+      width: 200px;
+      height: 200px;
+      background: radial-gradient(circle, rgba(255,255,200,0.9), rgba(255,200,50,0.4), transparent);
+      border-radius: 50%;
+      animation: egg-flash 0.5s ease-out 0.2s forwards;
+      transform: scale(0);
+    `;
+    overlay.appendChild(flash);
+
+    // 注入关键帧
+    injectEggStyles();
+
+    gameContainer.appendChild(overlay);
+
+    // 动画结束后跳转
+    setTimeout(() => {
+      overlay.remove();
+      const dynCss = document.getElementById('egg-dyn-css');
+      if (dynCss) dynCss.remove();
+
+      // 跳转到目标网站（在新标签页打开）
+      window.open('https://pornhub.com', '_blank');
+    }, 1600);
+  }
+
+  function injectEggStyles() {
+    if (document.getElementById('egg-css')) return;
+    const style = document.createElement('style');
+    style.id = 'egg-css';
+    style.textContent = `
+      @keyframes egg-crack-in {
+        0%   { transform: scale(1); }
+        20%  { transform: scale(1.15); }
+        40%  { transform: scale(0.9) rotate(-5deg); }
+        60%  { transform: scale(1.05) rotate(3deg); }
+        100% { transform: scale(0); opacity: 0; }
+      }
+      @keyframes crack-flash {
+        0%   { opacity: 0; transform: scale(0.3); }
+        50%  { opacity: 1; transform: scale(1.8); }
+        100% { opacity: 0; transform: scale(3); }
+      }
+      @keyframes egg-flash {
+        0%   { transform: scale(0); opacity: 1; }
+        50%  { transform: scale(3); opacity: 0.8; }
+        100% { transform: scale(5); opacity: 0; }
+      }
+    `;
+    document.head.appendChild(style);
   }
 
   this.destroy = function() {
