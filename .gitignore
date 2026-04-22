@@ -2,8 +2,9 @@
 .cursor/
 .vscode/
 .idea/
+*.code-workspace
 
-# Python 缓存
+# Python
 __pycache__/
 *.pyc
 *.pyo
@@ -20,6 +21,14 @@ env/
 ENV/
 Pipfile.lock
 poetry.lock
+.mypy_cache/
+.pytype/
+.pyre/
+.ruff_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
 
 # 环境变量
 .env
@@ -28,35 +37,47 @@ poetry.lock
 .env.production
 .env.*.local
 
-# 日志文件
-*.log
+# 日志
 logs/
+*.log
+*.log.*
 
-# 操作系统文件
+# 操作系统
 .DS_Store
 Thumbs.db
 desktop.ini
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 
-# Flutter/Dart
+# Flutter / Dart
 .dart_tool/
 .flutter-plugins
 .flutter-plugins-dependencies
 .packages
 .pub-cache/
+build/
+*.g.dart
 
 # 移动端构建产物
 *.apk
 *.aab
 *.ipa
+*.app
+*.framework
+*.dSYM
 
 # 临时文件
 *.tmp
 *.temp
-~*
+*~
 *.swp
 *.swo
 *~
 .git~
+.lock
+.DS_Store
 
 # 二进制和压缩包
 *.zip
@@ -64,13 +85,54 @@ desktop.ini
 *.rar
 *.7z
 *.dmg
+*.iso
 
-# 数据库文件
+# 数据库
 *.db
 *.sqlite
 *.sqlite3
 *.mdb
+*.fdb
 
-# 构建目录
-builds/
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# 模型文件（运行时生成，无需版本控制）
+*.h5
+*.pkl
+*.pth
+*.onnx
+*.tflite
+*.pb
+*.pt
+*.ckpt
+*.safetensors
+
+# Live2D 模型（二进制资源，仓库不跟踪）
+src/web/static/live2d/model/**/model.moc
+src/web/static/live2d/model/**/*.mtn
+src/web/static/live2d/model/**/*.pmx
+src/web/static/live2d/model/**/*.tga
+src/web/static/live2d/model/**/*.psd
+
+# 照片捕获目录（运行中生成的快照）
+src/web/captures/
+captures/
+
+# Web 构建产物
 src/web/builds/
+builds/
+
+# Node.js（如果使用前端构建工具）
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.yarn-integrity
+.pnpm-store/
+
+# 资源文件
+assets/images/*.png
+assets/images/*.jpg
+assets/images/*.jpeg
+assets/icons/*.svg
