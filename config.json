@@ -86,7 +86,7 @@
           "provider": "openai",
           "model": "gpt-4o-mini",
           "base_url": "https://free.v36.cm/v1",
-          "api_key": "sk-FI9VrF3YkNwQ53lp4684E7D1E856431eA32d399aC1906fA7",
+          "api_key": "",
           "enabled": true
         },
         "qwen3.5": {
