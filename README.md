@@ -12,6 +12,8 @@
 
 ![Python](https://img.shields.io/badge/Python-3.8+-3776AB?style=flat-square) ![Flask](https://img.shields.io/badge/Flask-2.3+-000000?style=flat-square) ![OpenCV](https://img.shields.io/badge/OpenCV-4.8+-5C3EE8?style=flat-square) ![Raspberry Pi](https://img.shields.io/badge/Raspberry%20Pi-C51A4A?style=flat-square)
 
+**简体中文** · [English](README.en.md)
+
 </div>
 
 ---
